@@ -33,26 +33,16 @@ class HxFLM
     if (!setup_socket(config.flm_host, config.socket_port)) return;
 
 #if cpp
-    untyped __global__.__hxcpp_start_flm_profiler();
+    if (_config.profiler) {
+      untyped __global__.__hxcpp_start_flm_profiler();
+    }
 #end
 
     if (config.auto_event_loop) setup_event_loop();
   }
 
-  function setup_event_loop():Void
-  {
-#if openfl
-    flash.Lib.stage.addEventListener(openfl.events.Event.ENTER_FRAME, advance_frame);
-#elseif lime
-    trace("Does lime have an event loop?");
-#else
-    trace("TODO: create separate thread for event loop? e.g. commandline tools");
-#end
-  }
-
   function setup_socket(host:String, port:Int):Bool
   {
-    // TODO: need this on a separate thread?
     _socket = new Socket();
     try {
       _socket.connect(new sys.net.Host(host), port);
@@ -60,7 +50,6 @@ class HxFLM
       _samples = new Array<Int>();
       _writer = new Amf3Writer(_socket.output);
       write_preamble();
-      start_timing(".enter");
       return true;
     } catch (e:Dynamic) {
       trace("Failed connecting to FLM host at "+host+":"+port);
@@ -97,24 +86,24 @@ class HxFLM
       //  _writer.write({"name":".tlm.category.disable","value":"displayobjects"});
       //  _writer.write({"name":".tlm.category.disable","value":"alloctraces"});
       //  _writer.write({"name":".tlm.category.disable","value":"allalloctraces"});
-      // 
+      //
       //  start_timing(".swf.parse");
       //  start_timing(".gc.Reap");
       //  end_timing(".gc.Reap");
-      // 
+      //
       //  _writer.write({"name":".network.loadmovie","value":"app:/Main.swf"});
       //  _writer.write({"name":".player.view.resize","value":{"xmax":1798,"xmin":0,"ymax":1011,"ymin":0}});
       //  _writer.write({"name":".swf.size","value":1533});
       //  end_timing(".swf.parse");
       //  _writer.write({"name":".swf.debug","value":true});
-      // 
+      //
       //  _writer.write({"name":".tlm.category.start","value":"customMetrics"});
       //  _writer.write({"name":".tlm.detailedMetrics.start","value":true});
       //  _writer.write({"name":".swf.size","value":2018});
       //  _writer.write({"name":".swf.parse","span":1,"delta":1});
       //  _writer.write({"name":".as.doactions","span":1,"delta":1});
       //  _writer.write({"name":".swf.globalobject","span":1,"delta":1,"value":"https://www.macromedia.com/support/flashplayer/sys/"});
-      // 
+      //
       //  _writer.write({"name":".player.abcdecode","span":1,"delta":1});
       //  _writer.write({"name":".starttimer","value":2});
       //  _writer.write({"name":".swf.start","delta":1});
@@ -150,47 +139,60 @@ class HxFLM
     }
   }
 
+  function setup_event_loop():Void
+  {
+#if openfl
+    flash.Lib.stage.addEventListener(openfl.events.Event.ENTER_FRAME, advance_frame);
+#elseif lime
+    trace("Does lime have an event loop?");
+#else
+    trace("TODO: create separate thread for event loop? e.g. commandline tools");
+#end
+  }
+
   var _method_names:Array<String>;
   var _samples:Array<Int>;
   function advance_frame(e=null)
   {
     if (_writer==null) return;
-    end_timing(".enter");
-    start_timing(".enter");
 
 #if cpp
-		untyped __global__.__hxcpp_dump_flm_names(_method_names);
-    if (_method_names.length>0) {
-      safe_write({"name":".sampler.methodNameMapArray","value":_method_names});
-      _method_names = new Array<String>();
-    }
-		untyped __global__.__hxcpp_dump_flm_samples(_samples);
-    if (_samples.length>0) {
-      var i:Int=0;
-      while (i<_samples.length) {
-        var depth = _samples[i++];
-        var callstack:Array<Int> = new Array<Int>();
-        for (j in 0...depth) {
-          callstack.unshift(_samples[i++]);
-        }
-        var delta = _samples[i++];
-        safe_write({"name":".sampler.sample","value":{"callstack":callstack, "numticks":delta}});
+    if (_config.profiler) {
+      untyped __global__.__hxcpp_dump_flm_names(_method_names);
+      if (_method_names.length>0) {
+        safe_write({"name":".sampler.methodNameMapArray","value":_method_names});
+        _method_names = new Array<String>();
       }
-      _samples = new Array<Int>();
+      untyped __global__.__hxcpp_dump_flm_samples(_samples);
+      if (_samples.length>0) {
+        var i:Int=0;
+        while (i<_samples.length) {
+          var depth = _samples[i++];
+          var callstack:Array<Int> = new Array<Int>();
+          for (j in 0...depth) {
+            callstack.unshift(_samples[i++]);
+          }
+          var delta = _samples[i++];
+          safe_write({"name":".sampler.sample","value":{"callstack":callstack, "numticks":delta}});
+        }
+        _samples = new Array<Int>();
+      }
     }
 #end
+
+    end_timing(".enter");
   }
 
   var _last = timestamp_us();
   var _start_times:StringMap<Float> = new StringMap<Float>();
-  function start_timing(name:String):Void
+  public function start_timing(name:String):Void
   {
     if (_writer==null) return;
 
     var t = timestamp_us();
     _start_times.set(name, t);
   }
-  function end_timing(name:String):Void
+  public function end_timing(name:String):Void
   {
     if (_writer==null) return;
 

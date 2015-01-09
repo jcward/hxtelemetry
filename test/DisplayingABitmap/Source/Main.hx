@@ -32,9 +32,11 @@ class Main extends Sprite {
     flash.Lib.stage.addEventListener(openfl.events.Event.ENTER_FRAME, function(e) {
         frame++;
 
+        flm.start_timing(".as.doactions");
         if (frame%15==5) TestTimeWaster.foo_a();
         if (frame%15==10) TestTimeWaster.foo_b();
         if (frame%15==0) TestTimeWaster.clear();
+        flm.end_timing(".as.doactions");
     });
 	}
 }
@@ -54,7 +56,6 @@ class TestTimeWaster
   // self 3, total 3+2+16+8, alloc 1+4+1+4=10mb, 
   public static function foo_a():Void
   {
-    trace("foo_a");
     var t0:Float = Util.getTimer();
     var i:Int = 0;
     var j:Int = 0;
