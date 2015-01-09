@@ -32,6 +32,10 @@ class HxFLM
 
     if (!setup_socket(config.flm_host, config.socket_port)) return;
 
+#if cpp
+    untyped __global__.__hxcpp_start_flm_profiler();
+#end
+
     if (config.auto_event_loop) setup_event_loop();
   }
 
@@ -52,6 +56,8 @@ class HxFLM
     _socket = new Socket();
     try {
       _socket.connect(new sys.net.Host(host), port);
+      _method_names = new Array<String>();
+      _samples = new Array<Int>();
       _writer = new Amf3Writer(_socket.output);
       write_preamble();
       start_timing(".enter");
@@ -144,11 +150,35 @@ class HxFLM
     }
   }
 
+  var _method_names:Array<String>;
+  var _samples:Array<Int>;
   function advance_frame(e=null)
   {
     if (_writer==null) return;
     end_timing(".enter");
     start_timing(".enter");
+
+#if cpp
+		untyped __global__.__hxcpp_dump_flm_names(_method_names);
+    if (_method_names.length>0) {
+      safe_write({"name":".sampler.methodNameMapArray","value":_method_names});
+      _method_names = new Array<String>();
+    }
+		untyped __global__.__hxcpp_dump_flm_samples(_samples);
+    if (_samples.length>0) {
+      var i:Int=0;
+      while (i<_samples.length) {
+        var depth = _samples[i++];
+        var callstack:Array<Int> = new Array<Int>();
+        for (j in 0...depth) {
+          callstack.unshift(_samples[i++]);
+        }
+        var delta = _samples[i++];
+        safe_write({"name":".sampler.sample","value":{"callstack":callstack, "numticks":delta}});
+      }
+      _samples = new Array<Int>();
+    }
+#end
   }
 
   var _last = timestamp_us();
@@ -176,6 +206,16 @@ class HxFLM
       cleanup();
     }
     _last = t;
+  }
+
+  function safe_write(obj:Dynamic):Void
+  {
+    if (_writer==null) return;
+    try {
+      _writer.write(obj);
+    } catch (e:Dynamic) {
+      cleanup();
+    }
   }
 
   function cleanup()

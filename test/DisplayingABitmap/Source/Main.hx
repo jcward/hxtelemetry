@@ -24,18 +24,17 @@ class Main extends Sprite {
     test_profalloc();
   }
 
-  function test_profalloc()
+  static function test_profalloc()
   {
     var flm = new hxflm.HxFLM();
-    return;
 
     var frame:Int = 0;
-    addEventListener(openfl.events.Event.ENTER_FRAME, function(e) {
+    flash.Lib.stage.addEventListener(openfl.events.Event.ENTER_FRAME, function(e) {
         frame++;
 
-        if (frame%15==5) SomeClass.foo_a();
-        if (frame%15==10) SomeClass.foo_b();
-        if (frame%15==0) SomeClass.clear();
+        if (frame%15==5) TestTimeWaster.foo_a();
+        if (frame%15==10) TestTimeWaster.foo_b();
+        if (frame%15==0) TestTimeWaster.clear();
     });
 	}
 }
@@ -48,18 +47,19 @@ class Util
   }
 }
 
-class SomeClass
+class TestTimeWaster
 {
   static var _ref:Array<Dynamic> = [];
 
   // self 3, total 3+2+16+8, alloc 1+4+1+4=10mb, 
   public static function foo_a():Void
   {
+    trace("foo_a");
     var t0:Float = Util.getTimer();
     var i:Int = 0;
     var j:Int = 0;
     while (Util.getTimer()-t0 < 3) {
-      while (j++<1000) { i++; }
+      while (j++<1000000) { i++; }
     }
 
     self_2ms_1mb();
@@ -86,7 +86,7 @@ class SomeClass
     var i:Int = 0;
     var j:Int = 0;
     while (Util.getTimer()-t0 < 2) {
-      while (j++<1000) { i++; }
+      while (j++<1000000) { i++; }
     }
     alloc_1mb_64strings();
   }
@@ -97,7 +97,7 @@ class SomeClass
     var i:Int = 0;
     var j:Int = 0;
     while (Util.getTimer()-t0 < 8) {
-      while (j++<1000) { i++; }
+      while (j++<10000) { i++; }
     }
     for (i in 0...4) self_2ms_1mb();
   }
@@ -108,7 +108,7 @@ class SomeClass
     var i:Int = 0;
     var j:Int = 0;
     while (Util.getTimer()-t0 < 2) {
-      while (j++<1000) { i++; }
+      while (j++<100000) { i++; }
     }
     for (i in 0...3) self_2ms_1mb();
   }
