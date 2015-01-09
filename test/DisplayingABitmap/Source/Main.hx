@@ -7,6 +7,7 @@ import openfl.display.Sprite;
 import openfl.utils.ByteArray;
 import openfl.Assets;
 
+import hxflm.HxFLM.Timing;
 
 class Main extends Sprite {
 	
@@ -32,11 +33,13 @@ class Main extends Sprite {
     flash.Lib.stage.addEventListener(openfl.events.Event.ENTER_FRAME, function(e) {
         frame++;
 
-        flm.start_timing(".as.doactions");
+        flm.start_timing(Timing.USER);
         if (frame%15==5) TestTimeWaster.foo_a();
+        flm.end_timing(Timing.USER);
+        flm.start_timing(Timing.RENDER);
         if (frame%15==10) TestTimeWaster.foo_b();
         if (frame%15==0) TestTimeWaster.clear();
-        flm.end_timing(".as.doactions");
+        flm.end_timing(Timing.RENDER);
     });
 	}
 }

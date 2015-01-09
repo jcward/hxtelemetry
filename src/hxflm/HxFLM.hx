@@ -4,7 +4,7 @@ import sys.net.Socket;
 import amf.io.Amf3Writer;
 import haxe.ds.StringMap;
 
-class HxFLMConfig
+class Config
 {
   public var app_name:String = "My App";
   public var flm_host:String = "localhost";
@@ -13,22 +13,46 @@ class HxFLMConfig
   public var cpu_usage:Bool = true;
   public var profiler:Bool = true;
   public var alloc:Bool = true;
+  public var singleton_instance:Bool = true;
+}
+
+class Timing {
+  // Couldn't get an enum to work well wrt scope/access, still needed toString() anyway
+
+  // Scout compatibility issue - real names
+  public static inline var GC:String = ".gc.custom";
+  public static inline var USER:String = ".as.doactions";
+  public static inline var RENDER:String = ".rend.custom";
+  public static inline var OTHER:String = ".other.custom";
+  public static inline var NET:String = ".net.custom";
+  public static inline var ENTER:String = ".enter";
+  // CUSTOM(s:String, color:Int); // TODO: implement me? Sounds cool!
 }
 
 class HxFLM
 {
+  // Optional: singleton accessors
+  public static var singleton(default,null):HxFLM;
+
+  // Member objects
   var _socket:Socket;
   var _writer:Amf3Writer;
-  var _config:HxFLMConfig;
+  var _config:Config;
 
+  // Timing helpers
   static var _abs_t0_usec:Float = Date.now().getTime()*1000;
-  static function timestamp_ms():Float { return _abs_t0_usec/1000 + haxe.Timer.stamp()*1000; };
-  static function timestamp_us():Float { return _abs_t0_usec + haxe.Timer.stamp()*1000000; };
+  static inline function timestamp_ms():Float { return _abs_t0_usec/1000 + haxe.Timer.stamp()*1000; };
+  static inline function timestamp_us():Float { return _abs_t0_usec + haxe.Timer.stamp()*1000000; };
 
-  public function new(config:HxFLMConfig=null)
+  public function new(config:Config=null)
   {
-    if (config==null) config = new HxFLMConfig();
+    if (config==null) config = new Config();
     _config = config;
+
+    if (_config.singleton_instance) {
+      if (singleton!=null) throw "Cannot have two singletons of HxFLM!";
+      singleton = this;
+    }
 
     if (!setup_socket(config.flm_host, config.socket_port)) return;
 
@@ -62,7 +86,7 @@ class HxFLM
     if (_writer!=null) {
       _writer.write({"name":".swf.name","value":_config.app_name});
 
-      // This preamble would be to achieve Scout compatibility - questionable...
+      // Scout compatibility issue
       //try {
       //  _writer.write({"name":".tlm.version","value":"3,2"});
       //  _writer.write({"name":".tlm.meta","value":0});
@@ -142,7 +166,7 @@ class HxFLM
   function setup_event_loop():Void
   {
 #if openfl
-    flash.Lib.stage.addEventListener(openfl.events.Event.ENTER_FRAME, advance_frame);
+    flash.Lib.stage.addEventListener(openfl.events.Event.ENTER_FRAME, _advance_frame);
 #elseif lime
     trace("Does lime have an event loop?");
 #else
@@ -152,7 +176,7 @@ class HxFLM
 
   var _method_names:Array<String>;
   var _samples:Array<Int>;
-  function advance_frame(e=null)
+  function _advance_frame(e=null)
   {
     if (_writer==null) return;
 
@@ -160,6 +184,7 @@ class HxFLM
     if (_config.profiler) {
       untyped __global__.__hxcpp_dump_flm_names(_method_names);
       if (_method_names.length>0) {
+        // Scout compatibility issue - wants bytes, not array<string>
         safe_write({"name":".sampler.methodNameMapArray","value":_method_names});
         _method_names = new Array<String>();
       }
@@ -180,7 +205,7 @@ class HxFLM
     }
 #end
 
-    end_timing(".enter");
+    end_timing(Timing.ENTER);
   }
 
   var _last = timestamp_us();
