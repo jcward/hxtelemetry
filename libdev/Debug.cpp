@@ -134,7 +134,13 @@ public:
         : mT0(0)
 {
         mDumpFile = inDumpFile;
-   
+        isFLMProfiler = !inDumpFile.compare(HX_CSTRING("FLM"));
+
+        if (isFLMProfiler) {
+          flmNames.push_back("1-indexed");
+          flmNamesDumped = 1;
+        }
+
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
    
@@ -247,6 +253,29 @@ public:
         }
     }
 
+    void DumpFLMSamples(Array<int> &result)
+    {
+      gSampleMutex.Lock();
+      int n = flmSamples.size();
+      for (int i = 0; i < n; i++)
+      {
+        int idx = flmSamples.at(i);
+        result->push(idx);
+      }
+      flmSamples.clear();
+      gSampleMutex.Unlock();
+    }
+
+    void DumpFLMNames(Array<String> &result)
+    {
+      int n = flmNames.size();
+      for (int i = flmNamesDumped; i < n; i++)
+      {
+        result->push(String(flmNames.at(i)));
+      }
+      flmNamesDumped = flmNames.size();
+    }
+
 private:
 
 struct ProfileEntry
@@ -313,14 +342,23 @@ struct ProfileEntry
         THREAD_FUNC_RET
     }
 
+    bool isFLMProfiler;
+
     String mDumpFile;
     int mT0;
     std::map<const char *, ProfileEntry> mProfileStats;
+
+    std::map<const char *, int> flmNameMap;
+    std::vector<const char *> flmNames;
+    std::vector<int> flmSamples;
+    int flmNamesDumped;
+    static MyMutex gSampleMutex;
 
     static MyMutex gThreadMutex;
     static int gThreadRefCount;
     static int gProfileClock;
 };
+/* static */ MyMutex Profiler::gSampleMutex;
 /* static */ MyMutex Profiler::gThreadMutex;
 /* static */ int Profiler::gThreadRefCount;
 /* static */ int Profiler::gProfileClock;
@@ -482,6 +520,18 @@ public:
             StackFrame *frame = stack->mStackFrames[i];
             result->push(frame->toString());
         }
+    }
+
+    static void DumpCurrentFLMSamples(Array<int> &result)
+    {
+        CallStack *stack = CallStack::GetCallerCallStack();
+        stack->mProfiler->DumpFLMSamples(result);
+    }
+
+    static void DumpCurrentFLMNames(Array<String> &result)
+    {
+        CallStack *stack = CallStack::GetCallerCallStack();
+        stack->mProfiler->DumpFLMNames(result);
     }
 
     // Gets a ThreadInfo for a thread
@@ -782,7 +832,7 @@ public:
         return false;
     }
 
-    static void StartCurrentThreadProfiler(String inDumpFile)
+    static Profiler* StartCurrentThreadProfiler(String inDumpFile)
     {
         CallStack *stack = GetCallerCallStack();
 
@@ -790,7 +840,7 @@ public:
             delete stack->mProfiler;
         }
 
-        stack->mProfiler = new Profiler(inDumpFile);
+        return (stack->mProfiler = new Profiler(inDumpFile));
     }
 
     static void StopCurrentThreadProfiler()
@@ -1860,25 +1910,45 @@ void hx::Profiler::Sample(hx::CallStack *stack)
 
     int depth = stack->GetDepth();
 
-    std::map<const char *, bool> alreadySeen;
-
-    // Add children time in to each stack element
-    for (int i = 0; i < (depth - 1); i++) {
+    if (isFLMProfiler) {
+      // Collect function names and callstacks (as indexes into the names vector)
+      gSampleMutex.Lock();
+      flmSamples.push_back(depth);
+      for (int i = 0; i < depth; i++) {
         const char *fullName = stack->GetFullNameAtDepth(i);
-        ProfileEntry &pe = mProfileStats[fullName];
-        if (!alreadySeen.count(fullName)) {
-            pe.total += delta;
-            alreadySeen[fullName] = true;
+        int idx = flmNameMap[fullName];
+        if (idx==0) {
+          idx = flmNames.size();
+          flmNameMap[fullName] = idx;
+          flmNames.push_back(fullName);
+          //DBGLOG("New flm name[%d]: %s\n", flmNames.size()-1, fullName);
         }
-        // For everything except the very bottom of the stack, add the time to
-        // that child's total with this entry
-        pe.children[stack->GetFullNameAtDepth(i + 1)] += delta;
-}
-
-    // Add the time into the actual function being executed
-    if (depth > 0) {
-        mProfileStats[stack->GetFullNameAtDepth(depth - 1)].self += delta;
-}
+        flmSamples.push_back(idx);
+      }
+      flmSamples.push_back(delta);
+      gSampleMutex.Unlock();
+      //DBGLOG("flmSamples length now %d\n", flmSamples.size());
+    } else {
+      std::map<const char *, bool> alreadySeen;
+   
+      // Add children time in to each stack element
+      for (int i = 0; i < (depth - 1); i++) {
+          const char *fullName = stack->GetFullNameAtDepth(i);
+          ProfileEntry &pe = mProfileStats[fullName];
+          if (!alreadySeen.count(fullName)) {
+              pe.total += delta;
+              alreadySeen[fullName] = true;
+          }
+          // For everything except the very bottom of the stack, add the time to
+          // that child's total with this entry
+          pe.children[stack->GetFullNameAtDepth(i + 1)] += delta;
+      }
+   
+      // Add the time into the actual function being executed
+      if (depth > 0) {
+          mProfileStats[stack->GetFullNameAtDepth(depth - 1)].self += delta;
+      }
+    }
 }
 
 
@@ -1935,6 +2005,27 @@ void NullReference(const char *type, bool allowFixup)
 
 } // namespace
 
+
+void __hxcpp_start_flm_profiler()
+{
+#ifdef HXCPP_STACK_TRACE
+  hx::CallStack::StartCurrentThreadProfiler(HX_CSTRING("FLM"));
+#endif
+}
+
+void __hxcpp_dump_flm_samples(Array<int> &result)
+{
+#ifdef HXCPP_STACK_TRACE
+  hx::CallStack::DumpCurrentFLMSamples(result);
+#endif
+}
+
+void __hxcpp_dump_flm_names(Array<String> &result)
+{
+#ifdef HXCPP_STACK_TRACE
+  hx::CallStack::DumpCurrentFLMNames(result);
+#endif
+}
 
 void __hxcpp_start_profiler(String inDumpFile)
 {
