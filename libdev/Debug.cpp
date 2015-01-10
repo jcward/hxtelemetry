@@ -143,7 +143,9 @@ public:
 
         // When a profiler exists, the profiler thread needs to exist
         gThreadMutex.Lock();
-   
+
+        ref_id = gThreadRefCount;
+        //DBGLOG(" --- NEW Profiler, ref_id=%d\n", ref_id);
         gThreadRefCount += 1;
    
         if (gThreadRefCount == 1) {
@@ -255,6 +257,7 @@ public:
 
     void DumpFLMSamples(Array<int> &result)
     {
+      // Lock as the profiler thread will push into flmSamples
       gSampleMutex.Lock();
       int n = flmSamples.size();
       for (int i = 0; i < n; i++)
@@ -268,12 +271,17 @@ public:
 
     void DumpFLMNames(Array<String> &result)
     {
+      gSampleMutex.Lock();
       int n = flmNames.size();
+      //if (n>flmNamesDumped) DBGLOG("Profiler at %d\n", ref_id);
+      gSampleMutex.Unlock();
       for (int i = flmNamesDumped; i < n; i++)
       {
-        result->push(String(flmNames.at(i)));
+        String name = String(flmNames.at(i));
+        //DBGLOG(" - Dumping: %s\n", flmNames.at(i));
+        result->push(name);
       }
-      flmNamesDumped = flmNames.size();
+      flmNamesDumped = n;
     }
 
 private:
@@ -341,7 +349,7 @@ struct ProfileEntry
 
         THREAD_FUNC_RET
     }
-
+    int ref_id;
     bool isFLMProfiler;
 
     String mDumpFile;
