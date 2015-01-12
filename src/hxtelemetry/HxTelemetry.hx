@@ -1,4 +1,4 @@
-package hxflm;
+package hxtelemetry;
 
 import sys.net.Socket;
 import amf.io.Amf3Writer;
@@ -7,7 +7,7 @@ import haxe.ds.StringMap;
 class Config
 {
   public var app_name:String = "My App";
-  public var flm_host:String = "localhost";
+  public var telemetry_host:String = "localhost";
   public var socket_port:Int = 7934;
   public var auto_event_loop:Bool = true;
   public var cpu_usage:Bool = true;
@@ -29,10 +29,10 @@ class Timing {
   // CUSTOM(s:String, color:Int); // TODO: implement me? Sounds cool!
 }
 
-class HxFLM
+class HxTelemetry
 {
   // Optional: singleton accessors
-  public static var singleton(default,null):HxFLM;
+  public static var singleton(default,null):HxTelemetry;
 
   // Member objects
   var _socket:Socket;
@@ -50,15 +50,15 @@ class HxFLM
     _config = config;
 
     if (_config.singleton_instance) {
-      if (singleton!=null) throw "Cannot have two singletons of HxFLM!";
+      if (singleton!=null) throw "Cannot have two singletons of HxTelemetry!";
       singleton = this;
     }
 
-    if (!setup_socket(config.flm_host, config.socket_port)) return;
+    if (!setup_socket(config.telemetry_host, config.socket_port)) return;
 
 #if cpp
     if (_config.profiler) {
-      untyped __global__.__hxcpp_start_flm_profiler();
+      untyped __global__.__hxcpp_start_hxt_profiler();
     }
 #end
 
@@ -76,7 +76,7 @@ class HxFLM
       write_preamble();
       return true;
     } catch (e:Dynamic) {
-      trace("Failed connecting to FLM host at "+host+":"+port);
+      trace("Failed connecting to Telemetry host at "+host+":"+port);
       return false;
     }
   }
@@ -182,13 +182,13 @@ class HxFLM
 
 #if cpp
     if (_config.profiler) {
-      untyped __global__.__hxcpp_dump_flm_names(_method_names);
+      untyped __global__.__hxcpp_dump_hxt_names(_method_names);
       if (_method_names.length>0) {
         // Scout compatibility issue - wants bytes, not array<string>
         safe_write({"name":".sampler.methodNameMapArray","value":_method_names});
         _method_names = new Array<String>();
       }
-      untyped __global__.__hxcpp_dump_flm_samples(_samples);
+      untyped __global__.__hxcpp_dump_hxt_samples(_samples);
       if (_samples.length>0) {
         var i:Int=0;
         while (i<_samples.length) {

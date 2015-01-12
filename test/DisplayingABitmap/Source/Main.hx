@@ -7,7 +7,7 @@ import openfl.display.Sprite;
 import openfl.utils.ByteArray;
 import openfl.Assets;
 
-import hxflm.HxFLM.Timing;
+import hxtelemetry.HxTelemetry.Timing;
 
 class Main extends Sprite {
 	
@@ -25,22 +25,40 @@ class Main extends Sprite {
     test_profalloc();
   }
 
+  static function ls():LongStructor
+  {
+    trace("About to new a LongStructor:");
+    return new LongStructor();
+  }
+
   static function test_profalloc()
   {
-    var flm = new hxflm.HxFLM();
-
+    var hxt = new hxtelemetry.HxTelemetry();
     var frame:Int = 0;
-    flash.Lib.stage.addEventListener(openfl.events.Event.ENTER_FRAME, function(e) {
-        frame++;
+		flash.Lib.stage.addEventListener(openfl.events.Event.ENTER_FRAME, function(e) {
+				frame++;
 
-        flm.start_timing(Timing.USER);
-        if (frame%15==5) TestTimeWaster.foo_a();
-        flm.end_timing(Timing.USER);
-        flm.start_timing(Timing.RENDER);
-        if (frame%15==10) TestTimeWaster.foo_b();
-        if (frame%15==0) TestTimeWaster.clear();
-        flm.end_timing(Timing.RENDER);
-    });
+				//if (frame%20==5) {
+        //  var b:ByteArray = new ByteArray();
+        //  trace(b.length);
+        //}
+
+				hxt.start_timing(Timing.USER);
+				if (frame%15==5) {
+          //trace("Longstructor:");
+          var l = ls();
+          //trace(l);
+        }
+				hxt.end_timing(Timing.USER);
+		 
+				//hxt.start_timing(Timing.USER);
+				//if (frame%15==5) TestTimeWaster.foo_a();
+				//hxt.end_timing(Timing.USER);
+				//hxt.start_timing(Timing.RENDER);
+				//if (frame%15==10) TestTimeWaster.foo_b();
+				//if (frame%15==0) TestTimeWaster.clear();
+				//hxt.end_timing(Timing.RENDER);
+		});
 	}
 }
 
@@ -49,6 +67,64 @@ class Util
   static var __t0:Float = haxe.Timer.stamp();
   public static function getTimer():Float {
     return (haxe.Timer.stamp()-__t0)*1000;
+  }
+}
+
+class LongStructor
+{
+  var foo:Int;
+
+  var _t0:Float;
+  var _t1:Float;
+  var _t2:Float;
+  var _t3:Float;
+  var _t4:Float;
+  var _t5:Float;
+  var _t6:Float;
+  var _t7:Float;
+  var _t8:Float;
+  var _t9:Float;
+  var _ta:Float;
+  var _tb:Float;
+  var _tc:Float;
+
+  var _qt0:Float;
+  var _qt1:Float;
+  var _qt2:Float;
+  var _qt3:Float;
+  var _qt4:Float;
+  var _qt5:Float;
+  var _qt6:Float;
+  var _qt7:Float;
+  var _qt8:Float;
+  var _qt9:Float;
+  var _qta:Float;
+  var _qtb:Float;
+  var _qtc:Float;
+
+  var _arr:Array<Int>;
+
+  public function new() {
+    var t0:Float = Util.getTimer();
+    var i:Int = 0;
+    var j:Int = 0;
+    //while (Util.getTimer()-t0 < 20) {
+    //  while (j++<10000000) { i++; }
+    //}
+    trace("I am in the constructor of LongStructor and I think I'm quite a few bytes in length! "+Math.random());
+    foo = i + j;
+
+    fill();
+  }
+
+  private function fill()
+  {
+    trace("About to fill...");
+    _arr = new Array<Int>();
+    for (i in 0...10000) {
+      _arr.push(i);
+    }
+    trace("All full!");
   }
 }
 

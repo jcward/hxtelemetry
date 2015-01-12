@@ -1,6 +1,7 @@
-hxFLM
-=======
+hxtelemetry
+===========
 
-hxFLM is an FLM Telemetry generator for Haxe which allows Haxe applications
-(on supported targets) to send telemetry data to hxScout (or, more
-experimentally, Adobe Scout).
+hxtelemetry is an application profiling library that enables telemetry generation
+for hxScout for Haxe applications. The telemetry provided (timing information,
+stack sampler, object allocation data), varies by target platform but the primary
+target is hxcpp.

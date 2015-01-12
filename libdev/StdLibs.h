@@ -199,9 +199,9 @@ Array<String> __hxcpp_get_exception_stack();
 
 // --- Profile -------------------------------------------------------------------
 
-void __hxcpp_start_flm_profiler();
-void __hxcpp_dump_flm_samples(Array<int> &result);
-void __hxcpp_dump_flm_names(Array<String> &result);
+void __hxcpp_start_hxt_profiler();
+void __hxcpp_dump_hxt_samples(Array<int> &result);
+void __hxcpp_dump_hxt_names(Array<String> &result);
 
 void __hxcpp_start_profiler(::String inDumpFile);
 void __hxcpp_stop_profiler();

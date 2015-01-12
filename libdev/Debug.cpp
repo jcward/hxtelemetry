@@ -134,11 +134,11 @@ public:
         : mT0(0)
 {
         mDumpFile = inDumpFile;
-        isFLMProfiler = !inDumpFile.compare(HX_CSTRING("FLM"));
+        isHXTProfiler = !inDumpFile.compare(HX_CSTRING("HXT"));
 
-        if (isFLMProfiler) {
-          flmNames.push_back("1-indexed");
-          flmNamesDumped = 1;
+        if (isHXTProfiler) {
+          hxtNames.push_back("1-indexed");
+          hxtNamesDumped = 1;
         }
 
         // When a profiler exists, the profiler thread needs to exist
@@ -255,33 +255,33 @@ public:
         }
     }
 
-    void DumpFLMSamples(Array<int> &result)
+    void DumpHXTSamples(Array<int> &result)
     {
-      // Lock as the profiler thread will push into flmSamples
+      // Lock as the profiler thread will push into hxtSamples
       gSampleMutex.Lock();
-      int n = flmSamples.size();
+      int n = hxtSamples.size();
       for (int i = 0; i < n; i++)
       {
-        int idx = flmSamples.at(i);
+        int idx = hxtSamples.at(i);
         result->push(idx);
       }
-      flmSamples.clear();
+      hxtSamples.clear();
       gSampleMutex.Unlock();
     }
 
-    void DumpFLMNames(Array<String> &result)
+    void DumpHXTNames(Array<String> &result)
     {
       gSampleMutex.Lock();
-      int n = flmNames.size();
-      //if (n>flmNamesDumped) DBGLOG("Profiler at %d\n", ref_id);
+      int n = hxtNames.size();
+      //if (n>hxtNamesDumped) DBGLOG("Profiler at %d\n", ref_id);
       gSampleMutex.Unlock();
-      for (int i = flmNamesDumped; i < n; i++)
+      for (int i = hxtNamesDumped; i < n; i++)
       {
-        String name = String(flmNames.at(i));
-        //DBGLOG(" - Dumping: %s\n", flmNames.at(i));
+        String name = String(hxtNames.at(i));
+        //DBGLOG(" - Dumping: %s\n", hxtNames.at(i));
         result->push(name);
       }
-      flmNamesDumped = n;
+      hxtNamesDumped = n;
     }
 
 private:
@@ -350,16 +350,16 @@ struct ProfileEntry
         THREAD_FUNC_RET
     }
     int ref_id;
-    bool isFLMProfiler;
+    bool isHXTProfiler;
 
     String mDumpFile;
     int mT0;
     std::map<const char *, ProfileEntry> mProfileStats;
 
-    std::map<const char *, int> flmNameMap;
-    std::vector<const char *> flmNames;
-    std::vector<int> flmSamples;
-    int flmNamesDumped;
+    std::map<const char *, int> hxtNameMap;
+    std::vector<const char *> hxtNames;
+    std::vector<int> hxtSamples;
+    int hxtNamesDumped;
     static MyMutex gSampleMutex;
 
     static MyMutex gThreadMutex;
@@ -530,16 +530,16 @@ public:
         }
     }
 
-    static void DumpCurrentFLMSamples(Array<int> &result)
+    static void DumpCurrentHXTSamples(Array<int> &result)
     {
         CallStack *stack = CallStack::GetCallerCallStack();
-        stack->mProfiler->DumpFLMSamples(result);
+        stack->mProfiler->DumpHXTSamples(result);
     }
 
-    static void DumpCurrentFLMNames(Array<String> &result)
+    static void DumpCurrentHXTNames(Array<String> &result)
     {
         CallStack *stack = CallStack::GetCallerCallStack();
-        stack->mProfiler->DumpFLMNames(result);
+        stack->mProfiler->DumpHXTNames(result);
     }
 
     // Gets a ThreadInfo for a thread
@@ -1898,11 +1898,21 @@ hx::StackFrame::~StackFrame()
 }
 
 
-
-
+long ___latest_new_size;
+hx::Object* ___latest_new_obj;
 
 void hx::Profiler::Sample(hx::CallStack *stack)
 {
+  const char *top = stack->GetFullNameAtDepth(stack->GetDepth());
+  int length = sizeof(top)/sizeof(char);
+  //if (length >= 4 && strcmp(top + length - 4, ".new") == 0) {
+  if (true || strstr(top, ".new") > 0) {
+    DBGLOG(" -: %s [%lu] %s %d\n", top, ___latest_new_size,
+           ___latest_new_obj->__GetClass()->__CStr(),
+           sizeof(___latest_new_obj));
+    //___latest_new_size = 0;
+  }
+
     if (mT0 == gProfileClock) {
         return;
    }
@@ -1918,24 +1928,24 @@ void hx::Profiler::Sample(hx::CallStack *stack)
 
     int depth = stack->GetDepth();
 
-    if (isFLMProfiler) {
+    if (isHXTProfiler) {
       // Collect function names and callstacks (as indexes into the names vector)
       gSampleMutex.Lock();
-      flmSamples.push_back(depth);
+      hxtSamples.push_back(depth);
       for (int i = 0; i < depth; i++) {
         const char *fullName = stack->GetFullNameAtDepth(i);
-        int idx = flmNameMap[fullName];
+        int idx = hxtNameMap[fullName];
         if (idx==0) {
-          idx = flmNames.size();
-          flmNameMap[fullName] = idx;
-          flmNames.push_back(fullName);
-          //DBGLOG("New flm name[%d]: %s\n", flmNames.size()-1, fullName);
+          idx = hxtNames.size();
+          hxtNameMap[fullName] = idx;
+          hxtNames.push_back(fullName);
+          //DBGLOG("New hxt name[%d]: %s\n", hxtNames.size()-1, fullName);
         }
-        flmSamples.push_back(idx);
+        hxtSamples.push_back(idx);
       }
-      flmSamples.push_back(delta);
+      hxtSamples.push_back(delta);
       gSampleMutex.Unlock();
-      //DBGLOG("flmSamples length now %d\n", flmSamples.size());
+      //DBGLOG("hxtSamples length now %d\n", hxtSamples.size());
     } else {
       std::map<const char *, bool> alreadySeen;
    
@@ -2014,24 +2024,24 @@ void NullReference(const char *type, bool allowFixup)
 } // namespace
 
 
-void __hxcpp_start_flm_profiler()
+void __hxcpp_start_hxt_profiler()
 {
 #ifdef HXCPP_STACK_TRACE
-  hx::CallStack::StartCurrentThreadProfiler(HX_CSTRING("FLM"));
+  hx::CallStack::StartCurrentThreadProfiler(HX_CSTRING("HXT"));
 #endif
 }
 
-void __hxcpp_dump_flm_samples(Array<int> &result)
+void __hxcpp_dump_hxt_samples(Array<int> &result)
 {
 #ifdef HXCPP_STACK_TRACE
-  hx::CallStack::DumpCurrentFLMSamples(result);
+  hx::CallStack::DumpCurrentHXTSamples(result);
 #endif
 }
 
-void __hxcpp_dump_flm_names(Array<String> &result)
+void __hxcpp_dump_hxt_names(Array<String> &result)
 {
 #ifdef HXCPP_STACK_TRACE
-  hx::CallStack::DumpCurrentFLMNames(result);
+  hx::CallStack::DumpCurrentHXTNames(result);
 #endif
 }
 
