@@ -58,7 +58,7 @@ class HxTelemetry
 
 #if cpp
     if (_config.profiler) {
-      untyped __global__.__hxcpp_start_hxt_profiler();
+      untyped __global__.__hxcpp_start_telemetry();
     }
 #end
 
