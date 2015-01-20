@@ -57,6 +57,10 @@ class HxTelemetry
     if (!setup_socket(config.telemetry_host, config.socket_port)) return;
 
 #if cpp
+    if (_config.alloc && !_config.profiler) {
+      throw "HxTelemetry config.alloc requires config.profiler";
+    }
+
     if (_config.profiler) {
       untyped __global__.__hxcpp_start_telemetry();
     }
@@ -72,6 +76,9 @@ class HxTelemetry
       _socket.connect(new sys.net.Host(host), port);
       _method_names = new Array<String>();
       _samples = new Array<Int>();
+      _alloc_types = new Array<String>();
+      _alloc_details = new Array<Int>();
+
       _writer = new Amf3Writer(_socket.output);
       write_preamble();
       return true;
@@ -176,11 +183,14 @@ class HxTelemetry
 
   var _method_names:Array<String>;
   var _samples:Array<Int>;
+  var _alloc_types:Array<String>;
+  var _alloc_details:Array<Int>;
   function _advance_frame(e=null)
   {
     if (_writer==null) return;
 
 #if cpp
+    untyped __global__.__hxcpp_hxt_ignore_allocs(true);
     if (_config.profiler) {
       untyped __global__.__hxcpp_dump_hxt_names(_method_names);
       if (_method_names.length>0) {
@@ -202,7 +212,26 @@ class HxTelemetry
         }
         _samples = new Array<Int>();
       }
+      if (_config.alloc) {
+        untyped __global__.__hxcpp_dump_hxt_allocations(_alloc_types, _alloc_details);
+        if (_alloc_types.length>0) {
+          var i:Int=0;
+          while (i<_alloc_types.length) {
+            var type = _alloc_types[i];
+            var id:Int = _alloc_details[i*3];
+            var size:Int = _alloc_details[i*3+1];
+            var stackid:Int = _alloc_details[i*3+2];
+            i++;            
+            // Scout compatibility issue - value also includes "time", e.g.
+            //  {"name":".memory.newObject","value":{"size":20,"time":72655,"type":"[class Namespace]","id":65268272,"stackid":1}}
+            safe_write({"name":".memory.newObject","value":{"size":size, "type":type, "stackid":stackid, "id":id}});
+          }
+          _alloc_types = new Array<String>();
+          _alloc_details = new Array<Int>();
+        }
+      }
     }
+    untyped __global__.__hxcpp_hxt_ignore_allocs(false);
 #end
 
     end_timing(Timing.ENTER);
