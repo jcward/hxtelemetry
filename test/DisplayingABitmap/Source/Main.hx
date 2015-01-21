@@ -43,21 +43,19 @@ class Main extends Sprite {
         //  trace(b.length);
         //}
 
+				// hxt.start_timing(Timing.USER);
+				// if (frame%15==5) {
+        //   //trace("Longstructor:");
+        //   var l = ls();
+        //   //trace(l);
+        // }
+				// hxt.end_timing(Timing.USER);
+
 				hxt.start_timing(Timing.USER);
-				if (frame%15==5) {
-          //trace("Longstructor:");
-          var l = ls();
-          //trace(l);
-        }
+				if (frame%15==5) TestTimeWaster.foo_a();
+				if (frame%15==10) TestTimeWaster.foo_b();
+				if (frame%15==0) TestTimeWaster.clear();
 				hxt.end_timing(Timing.USER);
-		 
-				//hxt.start_timing(Timing.USER);
-				//if (frame%15==5) TestTimeWaster.foo_a();
-				//hxt.end_timing(Timing.USER);
-				//hxt.start_timing(Timing.RENDER);
-				//if (frame%15==10) TestTimeWaster.foo_b();
-				//if (frame%15==0) TestTimeWaster.clear();
-				//hxt.end_timing(Timing.RENDER);
 		});
 	}
 }

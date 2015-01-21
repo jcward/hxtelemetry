@@ -210,10 +210,14 @@ class HxTelemetry
           var delta = _samples[i++];
           safe_write({"name":".sampler.sample","value":{"callstack":callstack, "numticks":delta}});
         }
+        if (_config.alloc) {
+          safe_write({"name":".memory.stackIdMap","value":_samples});
+        }
         _samples = new Array<Int>();
       }
       if (_config.alloc) {
         untyped __global__.__hxcpp_dump_hxt_allocations(_alloc_types, _alloc_details);
+        trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
         if (_alloc_types.length>0) {
           var i:Int=0;
           while (i<_alloc_types.length) {
