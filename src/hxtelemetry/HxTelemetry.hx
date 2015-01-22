@@ -199,28 +199,22 @@ class HxTelemetry
         _method_names = new Array<String>();
       }
       untyped __global__.__hxcpp_dump_hxt_samples(_samples);
-      var alloc_samples:Array<Int> = _config.alloc ? [] : null;
       if (_samples.length>0) {
         var i:Int=0;
         while (i<_samples.length) {
           var depth = _samples[i++];
-          if (_config.alloc) alloc_samples.push(depth);
           var callstack:Array<Int> = new Array<Int>();
           for (j in 0...depth) {
-            if (_config.alloc) alloc_samples.push(_samples[depth-1+i-2*j]);
             callstack.unshift(_samples[i++]);
           }
           var delta = _samples[i++];
           safe_write({"name":".sampler.sample","value":{"callstack":callstack, "numticks":delta}});
         }
-        if (_config.alloc) {
-          safe_write({"name":".memory.stackIdMap","value":alloc_samples});
-        }
         _samples = new Array<Int>();
       }
       if (_config.alloc) {
         untyped __global__.__hxcpp_dump_hxt_allocations(_alloc_types, _alloc_details);
-        trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
+        //trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
         if (_alloc_types.length>0) {
           var i:Int=0;
           while (i<_alloc_types.length) {
