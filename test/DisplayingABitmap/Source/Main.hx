@@ -56,6 +56,11 @@ class Main extends Sprite {
 				if (frame%15==10) TestTimeWaster.foo_b();
 				if (frame%15==0) TestTimeWaster.clear();
 				hxt.end_timing(Timing.USER);
+
+				if (frame%15==9) {
+          hxt.cleanup();
+          openfl.system.System.exit();
+        }
 		});
 	}
 }
