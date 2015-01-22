@@ -217,7 +217,7 @@ class HxTelemetry
       if (_config.alloc) {
         untyped __global__.__hxcpp_dump_hxt_allocations(_alloc_types, _alloc_details, _alloc_stackidmap);
         //trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
-        if (_alloc_types.length>0) {
+        if (_alloc_stackidmap.length>0) {
           safe_write({"name":".memory.stackIdMap","value":_alloc_stackidmap});
           _alloc_stackidmap = new Array<Int>();
         }
@@ -293,7 +293,7 @@ class HxTelemetry
 #end
   }
 
-  function cleanup()
+  public function cleanup()
   {
     if (_socket!=null) {
       _socket.close();
