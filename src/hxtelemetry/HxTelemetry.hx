@@ -199,19 +199,22 @@ class HxTelemetry
         _method_names = new Array<String>();
       }
       untyped __global__.__hxcpp_dump_hxt_samples(_samples);
+      var alloc_samples:Array<Int> = _config.alloc ? [] : null;
       if (_samples.length>0) {
         var i:Int=0;
         while (i<_samples.length) {
           var depth = _samples[i++];
+          if (_config.alloc) alloc_samples.push(depth);
           var callstack:Array<Int> = new Array<Int>();
           for (j in 0...depth) {
+            if (_config.alloc) alloc_samples.push(_samples[depth-1+i-2*j]);
             callstack.unshift(_samples[i++]);
           }
           var delta = _samples[i++];
           safe_write({"name":".sampler.sample","value":{"callstack":callstack, "numticks":delta}});
         }
         if (_config.alloc) {
-          safe_write({"name":".memory.stackIdMap","value":_samples});
+          safe_write({"name":".memory.stackIdMap","value":alloc_samples});
         }
         _samples = new Array<Int>();
       }
@@ -254,6 +257,9 @@ class HxTelemetry
   {
     if (_writer==null) return;
 
+#if cpp
+    untyped __global__.__hxcpp_hxt_ignore_allocs(true);
+#end
     var t = timestamp_us();
     try {
       if (_start_times.exists(name)) {
@@ -266,16 +272,25 @@ class HxTelemetry
       cleanup();
     }
     _last = t;
+#if cpp
+    untyped __global__.__hxcpp_hxt_ignore_allocs(false);
+#end
   }
 
   function safe_write(obj:Dynamic):Void
   {
     if (_writer==null) return;
+#if cpp
+    untyped __global__.__hxcpp_hxt_ignore_allocs(true);
+#end
     try {
       _writer.write(obj);
     } catch (e:Dynamic) {
       cleanup();
     }
+#if cpp
+    untyped __global__.__hxcpp_hxt_ignore_allocs(false);
+#end
   }
 
   function cleanup()
