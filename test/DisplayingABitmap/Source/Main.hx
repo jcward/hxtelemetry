@@ -164,7 +164,7 @@ class TestTimeWaster
     var i:Int = 0;
     var j:Int = 0;
     while (Util.getTimer()-t0 < 2) {
-      while (j++<1000000) { i++; }
+      j = 0; while (j++<100000) { i++; }
     }
     alloc_1mb_64strings();
   }
@@ -175,7 +175,7 @@ class TestTimeWaster
     var i:Int = 0;
     var j:Int = 0;
     while (Util.getTimer()-t0 < 8) {
-      while (j++<10000) { i++; }
+      j = 0; while (j++<100000) { i++; }
     }
     for (i in 0...4) self_2ms_1mb();
   }
@@ -186,7 +186,7 @@ class TestTimeWaster
     var i:Int = 0;
     var j:Int = 0;
     while (Util.getTimer()-t0 < 2) {
-      while (j++<100000) { i++; }
+      j = 0; while (j++<100000) { i++; }
     }
     for (i in 0...3) self_2ms_1mb();
   }

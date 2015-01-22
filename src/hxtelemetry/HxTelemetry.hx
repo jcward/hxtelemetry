@@ -78,6 +78,7 @@ class HxTelemetry
       _samples = new Array<Int>();
       _alloc_types = new Array<String>();
       _alloc_details = new Array<Int>();
+      _alloc_stackidmap = new Array<Int>();
 
       _writer = new Amf3Writer(_socket.output);
       write_preamble();
@@ -185,6 +186,7 @@ class HxTelemetry
   var _samples:Array<Int>;
   var _alloc_types:Array<String>;
   var _alloc_details:Array<Int>;
+  var _alloc_stackidmap:Array<Int>;
   function _advance_frame(e=null)
   {
     if (_writer==null) return;
@@ -213,8 +215,12 @@ class HxTelemetry
         _samples = new Array<Int>();
       }
       if (_config.alloc) {
-        untyped __global__.__hxcpp_dump_hxt_allocations(_alloc_types, _alloc_details);
+        untyped __global__.__hxcpp_dump_hxt_allocations(_alloc_types, _alloc_details, _alloc_stackidmap);
         //trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
+        if (_alloc_types.length>0) {
+          safe_write({"name":".memory.stackIdMap","value":_alloc_stackidmap});
+          _alloc_stackidmap = new Array<Int>();
+        }
         if (_alloc_types.length>0) {
           var i:Int=0;
           while (i<_alloc_types.length) {
