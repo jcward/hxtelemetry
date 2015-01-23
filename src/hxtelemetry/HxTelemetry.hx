@@ -227,7 +227,7 @@ class HxTelemetry
             var type = _alloc_types[i];
             var id:Int = _alloc_details[i*3];
             var size:Int = _alloc_details[i*3+1];
-            var stackid:Int = _alloc_details[i*3+2];
+            var stackid:Int = _alloc_details[i*3+2] + 1; // 1-indexed
             i++;            
             // Scout compatibility issue - value also includes "time", e.g.
             //  {"name":".memory.newObject","value":{"size":20,"time":72655,"type":"[class Namespace]","id":65268272,"stackid":1}}
