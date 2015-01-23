@@ -62,7 +62,10 @@ class HxTelemetry
     }
 
     if (_config.profiler) {
-      untyped __global__.__hxcpp_start_telemetry();
+#if !HXCPP_STACK_TRACE
+      throw "Using the HXTelemetry Profiler requires -D HXCPP_STACK_TRACE or in project.xml: <haxedef name=\"HXCPP_STACK_TRACE\" />";
+#end
+      untyped __global__.__hxcpp_hxt_start_telemetry();
       // Remove initial bias
       if (_config.allocations) { untyped __global__.__hxcpp_hxt_ignore_allocs(-1); }
     }
@@ -196,13 +199,13 @@ class HxTelemetry
 #if cpp
     untyped __global__.__hxcpp_hxt_ignore_allocs(1);
     if (_config.profiler) {
-      untyped __global__.__hxcpp_dump_hxt_names(_method_names);
+      untyped __global__.__hxcpp_hxt_dump_names(_method_names);
       if (_method_names.length>0) {
         // Scout compatibility issue - wants bytes, not array<string>
         safe_write({"name":".sampler.methodNameMapArray","value":_method_names});
         _method_names = new Array<String>();
       }
-      untyped __global__.__hxcpp_dump_hxt_samples(_samples);
+      untyped __global__.__hxcpp_hxt_dump_samples(_samples);
       if (_samples.length>0) {
         var i:Int=0;
         while (i<_samples.length) {
@@ -217,7 +220,7 @@ class HxTelemetry
         _samples = new Array<Int>();
       }
       if (_config.allocations) {
-        untyped __global__.__hxcpp_dump_hxt_allocations(_alloc_types, _alloc_details, _alloc_stackidmap);
+        untyped __global__.__hxcpp_hxt_dump_allocations(_alloc_types, _alloc_details, _alloc_stackidmap);
         //trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
         if (_alloc_stackidmap.length>0) {
           safe_write({"name":".memory.stackIdMap","value":_alloc_stackidmap});
