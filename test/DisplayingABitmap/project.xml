@@ -6,13 +6,14 @@
   <window width="640" height="480" background="#ffffff" resizable="true" fps="20" hardware="true" vsync="false"  />
 	
 	<source path="Source" />
-	<source path="../../src" />
 	
 	<haxelib name="openfl" />
 	
 	<assets path="Assets" rename="assets" exclude="*.svg" />
 	<icon path="Assets/openfl.svg" />
-	
+
+	<haxelib name="hxtelemetry" />
+  <haxedef name="HXTELEMETRY" />
   <haxedef name="HXCPP_STACK_TRACE" />
   <haxedef name="HXCPP_TELEMETRY" />
 
