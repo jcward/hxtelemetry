@@ -33,7 +33,9 @@ class Main extends Sprite {
 
   static function test_profalloc()
   {
-    var hxt = new hxtelemetry.HxTelemetry();
+    var cfg = new hxtelemetry.HxTelemetry.Config();
+    // cfg.allocations = false;
+    var hxt = new hxtelemetry.HxTelemetry(cfg);
     var frame:Int = 0;
 		flash.Lib.stage.addEventListener(openfl.events.Event.ENTER_FRAME, function(e) {
 				frame++;
@@ -57,10 +59,10 @@ class Main extends Sprite {
 				if (frame%15==0) TestTimeWaster.clear();
 				hxt.end_timing(Timing.USER);
 
-				if (frame%15==9) {
-          hxt.cleanup();
-          openfl.system.System.exit();
-        }
+				//if (frame%15==9) {
+        //  hxt.cleanup();
+        //  openfl.system.System.exit();
+        //}
 		});
 	}
 }

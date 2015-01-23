@@ -12,7 +12,7 @@ class Config
   public var auto_event_loop:Bool = true;
   public var cpu_usage:Bool = true;
   public var profiler:Bool = true;
-  public var alloc:Bool = true;
+  public var allocations:Bool = true;
   public var singleton_instance:Bool = true;
 }
 
@@ -57,12 +57,14 @@ class HxTelemetry
     if (!setup_socket(config.telemetry_host, config.socket_port)) return;
 
 #if cpp
-    if (_config.alloc && !_config.profiler) {
-      throw "HxTelemetry config.alloc requires config.profiler";
+    if (_config.allocations && !_config.profiler) {
+      throw "HxTelemetry config.allocations requires config.profiler";
     }
 
     if (_config.profiler) {
       untyped __global__.__hxcpp_start_telemetry();
+      // Remove initial bias
+      if (_config.allocations) { untyped __global__.__hxcpp_hxt_ignore_allocs(-1); }
     }
 #end
 
@@ -192,7 +194,7 @@ class HxTelemetry
     if (_writer==null) return;
 
 #if cpp
-    untyped __global__.__hxcpp_hxt_ignore_allocs(true);
+    untyped __global__.__hxcpp_hxt_ignore_allocs(1);
     if (_config.profiler) {
       untyped __global__.__hxcpp_dump_hxt_names(_method_names);
       if (_method_names.length>0) {
@@ -214,7 +216,7 @@ class HxTelemetry
         }
         _samples = new Array<Int>();
       }
-      if (_config.alloc) {
+      if (_config.allocations) {
         untyped __global__.__hxcpp_dump_hxt_allocations(_alloc_types, _alloc_details, _alloc_stackidmap);
         //trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
         if (_alloc_stackidmap.length>0) {
@@ -238,7 +240,7 @@ class HxTelemetry
         }
       }
     }
-    untyped __global__.__hxcpp_hxt_ignore_allocs(false);
+    untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
 #end
 
     end_timing(Timing.ENTER);
@@ -258,7 +260,7 @@ class HxTelemetry
     if (_writer==null) return;
 
 #if cpp
-    untyped __global__.__hxcpp_hxt_ignore_allocs(true);
+    untyped __global__.__hxcpp_hxt_ignore_allocs(1);
 #end
     var t = timestamp_us();
     try {
@@ -273,7 +275,7 @@ class HxTelemetry
     }
     _last = t;
 #if cpp
-    untyped __global__.__hxcpp_hxt_ignore_allocs(false);
+    untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
 #end
   }
 
@@ -281,7 +283,7 @@ class HxTelemetry
   {
     if (_writer==null) return;
 #if cpp
-    untyped __global__.__hxcpp_hxt_ignore_allocs(true);
+    untyped __global__.__hxcpp_hxt_ignore_allocs(1);
 #end
     try {
       _writer.write(obj);
@@ -289,7 +291,7 @@ class HxTelemetry
       cleanup();
     }
 #if cpp
-    untyped __global__.__hxcpp_hxt_ignore_allocs(false);
+    untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
 #end
   }
 
