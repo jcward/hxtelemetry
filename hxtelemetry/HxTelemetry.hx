@@ -243,6 +243,12 @@ class HxTelemetry
         }
       }
     }
+    
+    var gctime:Int = untyped __global__.__hxcpp_hxt_dump_gctime();
+    if (gctime>0) {
+      safe_write({"name":Timing.GC,"delta":gctime,"span":gctime});
+    }
+
     untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
 #end
 
