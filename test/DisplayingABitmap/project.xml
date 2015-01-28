@@ -3,7 +3,7 @@
 	
 	<meta title="Displaying a Bitmap" package="org.openfl.samples.displayingabitmap" version="1.0.0" company="OpenFL" />
 	<app main="Main" path="Export" file="DisplayingABitmap" />
-  <window width="640" height="480" background="#ffffff" resizable="true" fps="20" hardware="true" vsync="false"  />
+  <window width="1024" height="768" background="#ffffff" resizable="true" fps="60" hardware="true" vsync="false"  />
 	
 	<source path="Source" />
 	
@@ -13,7 +13,6 @@
 	<icon path="Assets/openfl.svg" />
 
 	<haxelib name="hxtelemetry" />
-  <haxedef name="HXTELEMETRY" />
   <haxedef name="HXCPP_STACK_TRACE" />
   <haxedef name="HXCPP_TELEMETRY" />
 

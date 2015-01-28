@@ -15,6 +15,10 @@ class Main extends Sprite {
 	public function new () {
 		
 		super ();
+
+    var cfg = new hxtelemetry.HxTelemetry.Config();
+    // cfg.allocations = false;
+    var hxt = new hxtelemetry.HxTelemetry(cfg);
 		
 		var bitmap = new Bitmap (Assets.getBitmapData ("assets/openfl.png"));
 		addChild (bitmap);
@@ -33,12 +37,40 @@ class Main extends Sprite {
 
   static function test_profalloc()
   {
-    var cfg = new hxtelemetry.HxTelemetry.Config();
-    // cfg.allocations = false;
-    var hxt = new hxtelemetry.HxTelemetry(cfg);
     var frame:Int = 0;
-		flash.Lib.stage.addEventListener(openfl.events.Event.ENTER_FRAME, function(e) {
+    var stage = flash.Lib.stage;
+
+		stage.addEventListener(openfl.events.Event.ENTER_FRAME, function(e) {
 				frame++;
+
+				hxtelemetry.Singleton.start_timing(Timing.USER);
+        function new_bmp() {
+          //var bmp = new Bitmap(Assets.getBitmapData ("assets/openfl.png"));
+          var bmp = new openfl.display.Shape();
+          bmp.graphics.beginFill(Std.random(0xffffff));
+          bmp.graphics.drawCircle(0,0,50);
+          bmp.x = Std.random(stage.stageWidth);
+    			bmp.y = Std.random(stage.stageHeight);
+          var sc:Float = Std.random(10)/10;
+          bmp.scaleX = bmp.scaleY = sc;
+          stage.addChild(bmp);
+          var dr:Float = Std.random(10)-5;
+          var dx:Float = Std.random(10)-5;
+          var dy:Float = Std.random(10)-5;
+          function anim(e) {
+            bmp.x += dx;
+            bmp.y += dy;
+            bmp.rotation += dr;
+            if (bmp.x<-50 || bmp.x > stage.stageWidth+50 ||
+                bmp.y<-50 || bmp.y > stage.stageHeight+50) {
+              stage.removeChild(bmp);
+              stage.removeEventListener(openfl.events.Event.ENTER_FRAME, anim);
+            }
+          }
+          stage.addEventListener(openfl.events.Event.ENTER_FRAME, anim);
+        }
+        for (i in 0...10) new_bmp();
+				hxtelemetry.Singleton.end_timing(Timing.USER);
 
 				//if (frame%20==5) {
         //  var b:ByteArray = new ByteArray();
@@ -53,11 +85,11 @@ class Main extends Sprite {
         // }
 				// hxt.end_timing(Timing.USER);
 
-				hxt.start_timing(Timing.USER);
-				if (frame%15==5) TestTimeWaster.foo_a();
-				if (frame%15==10) TestTimeWaster.foo_b();
-				if (frame%15==0) TestTimeWaster.clear();
-				hxt.end_timing(Timing.USER);
+				//hxtelemetry.Singleton.start_timing(Timing.USER);
+				//if (frame%15==5) TestTimeWaster.foo_a();
+				//if (frame%15==10) TestTimeWaster.foo_b();
+				//if (frame%15==0) TestTimeWaster.clear();
+				//hxtelemetry.Singleton.end_timing(Timing.USER);
 
 				//if (frame%15==9) {
         //  hxt.cleanup();
