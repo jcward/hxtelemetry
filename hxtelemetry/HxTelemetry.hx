@@ -272,16 +272,11 @@ class HxTelemetry
     untyped __global__.__hxcpp_hxt_ignore_allocs(1);
 #end
     var t = timestamp_us();
-    try {
-      if (_start_times.exists(name)) {
-        _writer.write({"name":name,"delta":Std.int(t-_last),"span":Std.int(t-_start_times.get(name))});
-        _start_times.remove(name);
-      } else {
-        _writer.write({"name":name,"delta":Std.int(t-_last)});
-      }
-    } catch (e:Dynamic) {
-      cleanup();
+    var data:Dynamic = {"name":name,"delta":Std.int(t-_last)}
+    if (_start_times.exists(name)) {
+      data.span = Std.int(t-_start_times.get(name));
     }
+    safe_write(data);
     _last = t;
 #if cpp
     untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
