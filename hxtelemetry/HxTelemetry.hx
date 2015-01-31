@@ -4,11 +4,15 @@ import sys.net.Socket;
 import amf.io.Amf3Writer;
 import haxe.ds.StringMap;
 
+#if cpp
+  import cpp.vm.Thread;
+#end
+
 class Config
 {
   public var app_name:String = "My App";
-  public var telemetry_host:String = "localhost";
-  public var socket_port:Int = 7934;
+  public var host:String = "localhost";
+  public var port:Int = 7934;
   public var auto_event_loop:Bool = true;
   public var cpu_usage:Bool = true;
   public var profiler:Bool = true;
@@ -35,9 +39,8 @@ class HxTelemetry
   public static var singleton(default,null):HxTelemetry;
 
   // Member objects
-  var _socket:Socket;
-  var _writer:Amf3Writer;
   var _config:Config;
+  var _writer:Thread;
 
   // Timing helpers
   static var _abs_t0_usec:Float = Date.now().getTime()*1000;
@@ -54,7 +57,21 @@ class HxTelemetry
       singleton = this;
     }
 
-    if (!setup_socket(config.telemetry_host, config.socket_port)) return;
+    _writer = Thread.create(start_writer);
+    _writer.sendMessage(Thread.current());
+    _writer.sendMessage(config.host);
+    _writer.sendMessage(config.port);
+    _writer.sendMessage(config.app_name);
+    if (!Thread.readMessage(true)) {
+      _writer = null;
+      return;
+    }
+
+    _method_names = new Array<String>();
+    _samples = new Array<Int>();
+    _alloc_types = new Array<String>();
+    _alloc_details = new Array<Int>();
+    _alloc_stackidmap = new Array<Int>();
 
 #if cpp
     if (_config.allocations && !_config.profiler) {
@@ -72,108 +89,6 @@ class HxTelemetry
 #end
 
     if (config.auto_event_loop) setup_event_loop();
-  }
-
-  function setup_socket(host:String, port:Int):Bool
-  {
-    _socket = new Socket();
-    try {
-      _socket.connect(new sys.net.Host(host), port);
-      _method_names = new Array<String>();
-      _samples = new Array<Int>();
-      _alloc_types = new Array<String>();
-      _alloc_details = new Array<Int>();
-      _alloc_stackidmap = new Array<Int>();
-
-      _writer = new Amf3Writer(_socket.output);
-      write_preamble();
-      return true;
-    } catch (e:Dynamic) {
-      trace("Failed connecting to Telemetry host at "+host+":"+port);
-      return false;
-    }
-  }
-
-  function write_preamble()
-  {
-    if (_writer!=null) {
-      _writer.write({"name":".swf.name","value":_config.app_name});
-
-      // Scout compatibility issue
-      //try {
-      //  _writer.write({"name":".tlm.version","value":"3,2"});
-      //  _writer.write({"name":".tlm.meta","value":0});
-      //  _writer.write({"name":".tlm.date","value":Std.int(timestamp_ms())});
-      //  _writer.write({"name":".player.version","value":"13,0,0,182"});
-      //  _writer.write({"name":".player.airversion","value":"13.0.0.83"});
-      //  _writer.write({"name":".player.type","value":"Air"});
-      //  _writer.write({"name":".player.debugger","value":true});
-      //  _writer.write({"name":".player.global.date","value":Std.int(timestamp_ms())});
-      //  _writer.write({"name":".player.instance","value":0});
-      //  _writer.write({"name":".player.scriptplayerversion","value":24});
-      //  _writer.write({"name":".platform.capabilities","value":"&M=Adobe Windows&R=2560x1440&COL=color&AR=1.0&OS=Windows XP 64&ARCH=x86&L=en&IME=f&PR32=t&PR64=t&LS=en-US"});
-      //  _writer.write({"name":".platform.cpucount","value":4});
-      //  _writer.write({"name":".mem.total","value":1033});
-      //  _writer.write({"name":".mem.used","value":181});
-      //  _writer.write({"name":".mem.managed","value":100});
-      //  _writer.write({"name":".mem.managed.used","value":18});
-      //  _writer.write({"name":".mem.telemetry.overhead","value":5});
-      //  _writer.write({"name":".tlm.category.disable","value":"3D"});
-      //  _writer.write({"name":".tlm.category.disable","value":"sampler"});
-      //  _writer.write({"name":".tlm.category.disable","value":"displayobjects"});
-      //  _writer.write({"name":".tlm.category.disable","value":"alloctraces"});
-      //  _writer.write({"name":".tlm.category.disable","value":"allalloctraces"});
-      //
-      //  start_timing(".swf.parse");
-      //  start_timing(".gc.Reap");
-      //  end_timing(".gc.Reap");
-      //
-      //  _writer.write({"name":".network.loadmovie","value":"app:/Main.swf"});
-      //  _writer.write({"name":".player.view.resize","value":{"xmax":1798,"xmin":0,"ymax":1011,"ymin":0}});
-      //  _writer.write({"name":".swf.size","value":1533});
-      //  end_timing(".swf.parse");
-      //  _writer.write({"name":".swf.debug","value":true});
-      //
-      //  _writer.write({"name":".tlm.category.start","value":"customMetrics"});
-      //  _writer.write({"name":".tlm.detailedMetrics.start","value":true});
-      //  _writer.write({"name":".swf.size","value":2018});
-      //  _writer.write({"name":".swf.parse","span":1,"delta":1});
-      //  _writer.write({"name":".as.doactions","span":1,"delta":1});
-      //  _writer.write({"name":".swf.globalobject","span":1,"delta":1,"value":"https://www.macromedia.com/support/flashplayer/sys/"});
-      //
-      //  _writer.write({"name":".player.abcdecode","span":1,"delta":1});
-      //  _writer.write({"name":".starttimer","value":2});
-      //  _writer.write({"name":".swf.start","delta":1});
-      //  _writer.write({"name":".swf.name","value":_config.app_name});
-      //  _writer.write({"name":".swf.rate","value":16667});
-      //  _writer.write({"name":".swf.vm","value":3});
-      //  _writer.write({"name":".swf.width","value":640});
-      //  _writer.write({"name":".swf.height","value":480});
-      //  _writer.write({"name":".swf.playerversion","value":18});
-      //  _writer.write({"name":".swf.displayname","value":"Example"});
-      //  _writer.write({"name":".player.view.resize","value":{"xmax":640,"xmin":0,"ymax":480,"ymin":0}});
-      //  _writer.write({"name":".gc.Reap","span":1,"delta":1});
-      //  _writer.write({"name":".as.doactions","span":1,"delta":1});
-      //  _writer.write({"name":".as.actions","span":1,"delta":484});
-      //  _writer.write({"name":".as.event","span":1,"delta":1,"value":"status"});
-      //  _writer.write({"name":".as.event","span":1,"delta":1,"value":"complete"});
-      //  _writer.write({"name":".network.swf.received","span":1,"delta":1,"value":1237});
-      //  _writer.write({"name":".network.loader.receive","span":1,"delta":1,"value":5});
-      //  _writer.write({"name":".network.loader.receive","span":1,"delta":1,"value":5});
-      //  _writer.write({"name":".network.loader.close","span":9,"delta":1,"value":5});
-      //  _writer.write({"name":".network.loadfile","span":1,"delta":1,"value":"app:/Main.swf"});
-      //  _writer.write({"name":".as.runentrypoint","span":1,"delta":1});
-      //  _writer.write({"name":".gc.Reap","span":1,"delta":1});
-      //  _writer.write({"name":".mem.total","value":7057});
-      //  _writer.write({"name":".mem.used","value":6321});
-      //  _writer.write({"name":".mem.managed","value":5432});
-      //  _writer.write({"name":".mem.managed.used","value":4921});
-      //  _writer.write({"name":".tlm.doplay","span":1,"delta":1});
-
-      //} catch (e:Dynamic) {
-      //  cleanup();
-      //}
-    }
   }
 
   function setup_event_loop():Void
@@ -202,7 +117,7 @@ class HxTelemetry
       untyped __global__.__hxcpp_hxt_dump_names(_method_names);
       if (_method_names.length>0) {
         // Scout compatibility issue - wants bytes, not array<string>
-        safe_write({"name":".sampler.methodNameMapArray","value":_method_names});
+        _writer.sendMessage({"name":".sampler.methodNameMapArray","value":_method_names});
         _method_names = new Array<String>();
       }
       untyped __global__.__hxcpp_hxt_dump_samples(_samples);
@@ -215,7 +130,7 @@ class HxTelemetry
             callstack.unshift(_samples[i++]);
           }
           var delta = _samples[i++];
-          safe_write({"name":".sampler.sample","value":{"callstack":callstack, "numticks":delta}});
+          _writer.sendMessage({"name":".sampler.sample","value":{"callstack":callstack, "numticks":delta}});
         }
         _samples = new Array<Int>();
       }
@@ -223,7 +138,7 @@ class HxTelemetry
         untyped __global__.__hxcpp_hxt_dump_allocations(_alloc_types, _alloc_details, _alloc_stackidmap);
         //trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
         if (_alloc_stackidmap.length>0) {
-          safe_write({"name":".memory.stackIdMap","value":_alloc_stackidmap});
+          _writer.sendMessage({"name":".memory.stackIdMap","value":_alloc_stackidmap});
           _alloc_stackidmap = new Array<Int>();
         }
         if (_alloc_types.length>0) {
@@ -236,7 +151,7 @@ class HxTelemetry
             i++;            
             // Scout compatibility issue - value also includes "time", e.g.
             //  {"name":".memory.newObject","value":{"size":20,"time":72655,"type":"[class Namespace]","id":65268272,"stackid":1}}
-            safe_write({"name":".memory.newObject","value":{"size":size, "type":type, "stackid":stackid, "id":id}});
+            _writer.sendMessage({"name":".memory.newObject","value":{"size":size, "type":type, "stackid":stackid, "id":id}});
           }
           _alloc_types = new Array<String>();
           _alloc_details = new Array<Int>();
@@ -246,7 +161,7 @@ class HxTelemetry
     
     var gctime:Int = untyped __global__.__hxcpp_hxt_dump_gctime();
     if (gctime>0) {
-      safe_write({"name":Timing.GC,"delta":gctime,"span":gctime});
+      _writer.sendMessage({"name":Timing.GC,"delta":gctime,"span":gctime});
     }
 
     untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
@@ -276,36 +191,58 @@ class HxTelemetry
     if (_start_times.exists(name)) {
       data.span = Std.int(t-_start_times.get(name));
     }
-    safe_write(data);
+    _writer.sendMessage(data);
     _last = t;
 #if cpp
     untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
 #end
   }
 
-  function safe_write(obj:Dynamic):Void
+  private static function start_writer():Void
   {
-    if (_writer==null) return;
-#if cpp
-    untyped __global__.__hxcpp_hxt_ignore_allocs(1);
-#end
+    var socket:Socket = null;
+    var writer:Amf3Writer;
+
+    var hxt_thread:Thread = Thread.readMessage(true);
+    var host:String = Thread.readMessage(true);
+    var port:Int = Thread.readMessage(true);
+    var app_name:String = Thread.readMessage(true);
+
+    function cleanup()
+    {
+      if (socket!=null) {
+        socket.close();
+        socket = null;
+      }
+      writer = null;
+    }
+
+    function safe_write(data) {
+      try {
+        writer.write(data);
+      } catch (e:Dynamic) {
+        cleanup();
+      }
+    }
+
+    socket = new Socket();
     try {
-      _writer.write(obj);
+      socket.connect(new sys.net.Host(host), port);
+      writer = new Amf3Writer(socket.output);
+      safe_write({"name":".swf.name","value":app_name});
+      hxt_thread.sendMessage(true);
     } catch (e:Dynamic) {
-      cleanup();
+      trace("Failed connecting to Telemetry host at "+host+":"+port);
+      hxt_thread.sendMessage(false);
     }
-#if cpp
-    untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
-#end
-  }
 
-  public function cleanup()
-  {
-    if (_socket!=null) {
-      _socket.close();
-      _socket = null;
+    while (true) {
+      var data = Thread.readMessage(true);
+      if (data!=null) {
+        safe_write(data);
+      }
+      if (socket==null) break;
     }
-    _writer = null;
+    trace("HXTelemetry socket thread exiting");
   }
-
 }
