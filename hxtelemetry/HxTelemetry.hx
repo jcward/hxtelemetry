@@ -94,7 +94,7 @@ class HxTelemetry
   function setup_event_loop():Void
   {
 #if openfl
-    flash.Lib.stage.addEventListener(openfl.events.Event.ENTER_FRAME, _advance_frame);
+    flash.Lib.stage.addEventListener("HXT_BEFORE_FRAME", advance_frame);
 #elseif lime
     trace("Does lime have an event loop?");
 #else
@@ -107,7 +107,7 @@ class HxTelemetry
   var _alloc_types:Array<String>;
   var _alloc_details:Array<Int>;
   var _alloc_stackidmap:Array<Int>;
-  function _advance_frame(e=null)
+  public function advance_frame(e=null)
   {
     if (_writer==null) return;
 
