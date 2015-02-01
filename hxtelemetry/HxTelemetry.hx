@@ -217,9 +217,18 @@ class HxTelemetry
       writer = null;
     }
 
-    function safe_write(data) {
+    var switch_to_nonamf = true;
+    var amf_mode = true;
+
+    function safe_write(data:Dynamic) {
       try {
-        writer.write(data);
+        if (!amf_mode) {
+          var msg:String = haxe.Serializer.run(data);
+          socket.output.writeInt32(msg.length);
+          socket.output.writeString(msg);
+        } else {
+          writer.write(data);
+        }
       } catch (e:Dynamic) {
         cleanup();
       }
@@ -228,8 +237,11 @@ class HxTelemetry
     socket = new Socket();
     try {
       socket.connect(new sys.net.Host(host), port);
-      writer = new Amf3Writer(socket.output);
-      safe_write({"name":".swf.name","value":app_name});
+      if (amf_mode) {
+        writer = new Amf3Writer(socket.output);
+      }
+      safe_write({"name":".swf.name","value":app_name, "hxt":switch_to_nonamf});
+      if (switch_to_nonamf) amf_mode = false;
       hxt_thread.sendMessage(true);
     } catch (e:Dynamic) {
       trace("Failed connecting to Telemetry host at "+host+":"+port);
