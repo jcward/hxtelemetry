@@ -149,16 +149,16 @@ class HxTelemetry
             var size:Int = _alloc_details[i*3+1];
             var stackid:Int = _alloc_details[i*3+2] + 1; // 1-indexed
             i++;            
-            // Scout compatibility issue - value also includes "time", e.g.
+            // Scout compatibility issues - value merged into base object, value also includes "time", e.g.
             //  {"name":".memory.newObject","value":{"size":20,"time":72655,"type":"[class Namespace]","id":65268272,"stackid":1}}
-            _writer.sendMessage({"name":".memory.newObject","value":{"size":size, "type":type, "stackid":stackid, "id":id}});
+            _writer.sendMessage({"name":".memory.newObject","size":size, "type":type, "stackid":stackid, "id":id});
           }
           _alloc_types = new Array<String>();
           _alloc_details = new Array<Int>();
         }
       }
     }
-    
+
     var gctime:Int = untyped __global__.__hxcpp_hxt_dump_gctime();
     if (gctime>0) {
       _writer.sendMessage({"name":Timing.GC,"delta":gctime,"span":gctime});
