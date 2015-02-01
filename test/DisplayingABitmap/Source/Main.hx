@@ -10,14 +10,16 @@ import openfl.Assets;
 import hxtelemetry.HxTelemetry.Timing;
 
 class Main extends Sprite {
-	
+
+	public static var fps:openfl.display.FPS;
+
 	
 	public function new () {
 		
 		super ();
 
     var cfg = new hxtelemetry.HxTelemetry.Config();
-    // cfg.allocations = false;
+    //cfg.allocations = false;
     var hxt = new hxtelemetry.HxTelemetry(cfg);
 		
 		var bitmap = new Bitmap (Assets.getBitmapData ("assets/openfl.png"));
@@ -25,6 +27,10 @@ class Main extends Sprite {
 		
 		bitmap.x = (stage.stageWidth - bitmap.width) / 2;
 		bitmap.y = (stage.stageHeight - bitmap.height) / 2;
+
+		fps = new openfl.display.FPS(0,0);
+		fps.mouseEnabled = false;
+		stage.addChild(fps);
 
     test_profalloc();
   }
@@ -48,15 +54,17 @@ class Main extends Sprite {
           //var bmp = new Bitmap(Assets.getBitmapData ("assets/openfl.png"));
           var bmp = new openfl.display.Shape();
           bmp.graphics.beginFill(Std.random(0xffffff));
-          bmp.graphics.drawCircle(0,0,50);
+          bmp.graphics.drawRoundRect(-20, -10, 40, 20, 7);
           bmp.x = Std.random(stage.stageWidth);
     			bmp.y = Std.random(stage.stageHeight);
-          var sc:Float = Std.random(10)/10;
-          bmp.scaleX = bmp.scaleY = sc;
+          var sc:Float = Std.random(10)/10.0+1.5;
+					bmp.scaleX = bmp.scaleY = sc;
           stage.addChild(bmp);
           var dr:Float = Std.random(10)-5;
           var dx:Float = Std.random(10)-5;
           var dy:Float = Std.random(10)-5;
+          if (dx<0) dx -= 0.6; else dx += 0.6;
+					if (dy<0) dy -= 0.6; else dy += 0.6;
           function anim(e) {
             bmp.x += dx;
             bmp.y += dy;
@@ -69,7 +77,8 @@ class Main extends Sprite {
           }
           stage.addEventListener(openfl.events.Event.ENTER_FRAME, anim);
         }
-        for (i in 0...10) new_bmp();
+        for (i in 0...2) new_bmp();
+        stage.addChild(Main.fps);
 				hxtelemetry.Singleton.end_timing(Timing.USER);
 
 				//if (frame%20==5) {
