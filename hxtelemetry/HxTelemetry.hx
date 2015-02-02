@@ -72,6 +72,7 @@ class HxTelemetry
     _alloc_types = new Array<String>();
     _alloc_details = new Array<Int>();
     _alloc_stackidmap = new Array<Int>();
+    _collections = new Array<Int>();
 
 #if cpp
     if (_config.allocations && !_config.profiler) {
@@ -107,6 +108,7 @@ class HxTelemetry
   var _alloc_types:Array<String>;
   var _alloc_details:Array<Int>;
   var _alloc_stackidmap:Array<Int>;
+  var _collections:Array<Int>;
   public function advance_frame(e=null)
   {
     if (_writer==null) return;
@@ -155,6 +157,14 @@ class HxTelemetry
           }
           _alloc_types = new Array<String>();
           _alloc_details = new Array<Int>();
+        }
+        untyped __global__.__hxcpp_hxt_dump_collections(_collections);
+        //trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
+        if (_collections.length>0) {
+          for (i in 0..._collections.length) {
+            _writer.sendMessage({"name":".memory.deleteObject","id":_collections[i]});
+          }
+          _collections = new Array<Int>();
         }
       }
     }
