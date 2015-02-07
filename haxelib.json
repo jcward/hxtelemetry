@@ -2,10 +2,10 @@
 	"name": "hxtelemetry",
 	"url": "http://github.com/jcward/hxtelemetry",
 	"license": "MIT",
-	"tags": [],
-	"description": "Haxe FLM Telemetry Generator",
+	"tags": ["cpp"],
+	"description": "Haxe Telemetry Generation Library",
 	"version": "0.0.1",
-	"releasenote": "Initial release",
+	"releasenote": "Placeholder only",
 	"contributors": [ "jeff.ward" ],
 	"dependencies": {}
 }
