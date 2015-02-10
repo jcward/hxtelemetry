@@ -137,8 +137,10 @@ class HxTelemetry
         _samples = new Array<Int>();
       }
       if (_config.allocations) {
-        untyped __global__.__hxcpp_hxt_dump_allocations(_alloc_types, _alloc_details, _alloc_stackidmap);
+        var allocations:Dynamic = untyped __global__.__hxcpp_hxt_dump_allocations(_alloc_stackidmap);
         //trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
+        //trace("Got allocations: "+Type.getClass(allocations));
+        _writer.sendMessage({"allocations":allocations});
         if (_alloc_stackidmap.length>0) {
           _writer.sendMessage({"name":".memory.stackIdMap","value":_alloc_stackidmap});
           _alloc_stackidmap = new Array<Int>();
@@ -168,6 +170,12 @@ class HxTelemetry
         }
       }
     }
+
+    // TODO: only send if they change, track locally
+    // TODO: support other names, reserved, etc
+    var gctotal:Int = Std.int((untyped __global__.__hxcpp_gc_reserved_bytes())/1024);
+    _writer.sendMessage({"name":".mem.total","value":gctotal });
+    _writer.sendMessage({"name":".mem.used","value":gctotal });
 
     var gctime:Int = untyped __global__.__hxcpp_hxt_dump_gctime();
     if (gctime>0) {
