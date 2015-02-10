@@ -137,9 +137,9 @@ class HxTelemetry
         _samples = new Array<Int>();
       }
       if (_config.allocations) {
-        var allocations:Dynamic = untyped __global__.__hxcpp_hxt_dump_allocations(_alloc_stackidmap);
+        var allocations:cpp.Pointer<Dynamic> = untyped __global__.__hxcpp_hxt_dump_allocations(_alloc_stackidmap);
         //trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
-        //trace("Got allocations: "+Type.getClass(allocations));
+        //trace("Sending allocations: "+allocations);
         _writer.sendMessage({"allocations":allocations});
         if (_alloc_stackidmap.length>0) {
           _writer.sendMessage({"name":".memory.stackIdMap","value":_alloc_stackidmap});
@@ -152,7 +152,7 @@ class HxTelemetry
             var id:Int = _alloc_details[i*3];
             var size:Int = _alloc_details[i*3+1];
             var stackid:Int = _alloc_details[i*3+2] + 1; // 1-indexed
-            i++;            
+            i++;
             // Scout compatibility issues - value merged into base object, value also includes "time", e.g.
             //  {"name":".memory.newObject","value":{"size":20,"time":72655,"type":"[class Namespace]","id":65268272,"stackid":1}}
             _writer.sendMessage({"name":".memory.newObject","size":size, "type":type, "stackid":stackid, "id":id});
@@ -269,7 +269,11 @@ class HxTelemetry
     while (true) {
       var data = Thread.readMessage(true);
       if (data!=null) {
-        safe_write(data);
+        if (data.allocations!=null) {
+          // untyped __global__.__hxcpp_hxt_enumerate_allocations(data.allocations, safe_write);
+        } else {
+          safe_write(data);
+        }
       }
       if (socket==null) break;
     }
