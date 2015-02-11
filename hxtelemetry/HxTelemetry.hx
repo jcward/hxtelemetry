@@ -116,71 +116,19 @@ class HxTelemetry
 #if cpp
     untyped __global__.__hxcpp_hxt_ignore_allocs(1);
     if (_config.profiler) {
-      untyped __global__.__hxcpp_hxt_dump_names(_method_names);
-      if (_method_names.length>0) {
-        // Scout compatibility issue - wants bytes, not array<string>
-        _writer.sendMessage({"name":".sampler.methodNameMapArray","value":_method_names});
-        _method_names = new Array<String>();
-      }
-      untyped __global__.__hxcpp_hxt_dump_samples(_samples);
-      if (_samples.length>0) {
-        var i:Int=0;
-        while (i<_samples.length) {
-          var depth = _samples[i++];
-          var callstack:Array<Int> = new Array<Int>();
-          for (j in 0...depth) {
-            callstack.unshift(_samples[i++]);
-          }
-          var delta = _samples[i++];
-          _writer.sendMessage({"name":".sampler.sample","value":{"callstack":callstack, "numticks":delta}});
-        }
-        _samples = new Array<Int>();
-      }
-      if (_config.allocations) {
-        var allocations:Dynamic = untyped __global__.__hxcpp_hxt_dump_allocations(_alloc_stackidmap);
-        //trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
-        //trace("Got allocations: "+Type.getClass(allocations));
-        _writer.sendMessage({"allocations":allocations});
-        if (_alloc_stackidmap.length>0) {
-          _writer.sendMessage({"name":".memory.stackIdMap","value":_alloc_stackidmap});
-          _alloc_stackidmap = new Array<Int>();
-        }
-        if (_alloc_types.length>0) {
-          var i:Int=0;
-          while (i<_alloc_types.length) {
-            var type = _alloc_types[i];
-            var id:Int = _alloc_details[i*3];
-            var size:Int = _alloc_details[i*3+1];
-            var stackid:Int = _alloc_details[i*3+2] + 1; // 1-indexed
-            i++;            
-            // Scout compatibility issues - value merged into base object, value also includes "time", e.g.
-            //  {"name":".memory.newObject","value":{"size":20,"time":72655,"type":"[class Namespace]","id":65268272,"stackid":1}}
-            _writer.sendMessage({"name":".memory.newObject","size":size, "type":type, "stackid":stackid, "id":id});
-          }
-          _alloc_types = new Array<String>();
-          _alloc_details = new Array<Int>();
-        }
-        untyped __global__.__hxcpp_hxt_dump_collections(_collections);
-        //trace(" -- got "+_alloc_types.length+" allocations, "+_alloc_details.length+" details!");
-        if (_collections.length>0) {
-          for (i in 0..._collections.length) {
-            _writer.sendMessage({"name":".memory.deleteObject","id":_collections[i]});
-          }
-          _collections = new Array<Int>();
-        }
-      }
+      untyped __global__.__hxcpp_hxt_dump_telemetry();
     }
 
-    // TODO: only send if they change, track locally
-    // TODO: support other names, reserved, etc
-    var gctotal:Int = Std.int((untyped __global__.__hxcpp_gc_reserved_bytes())/1024);
-    _writer.sendMessage({"name":".mem.total","value":gctotal });
-    _writer.sendMessage({"name":".mem.used","value":gctotal });
+    // // TODO: only send if they change, track locally
+    // // TODO: support other names, reserved, etc
+    // var gctotal:Int = Std.int((untyped __global__.__hxcpp_gc_reserved_bytes())/1024);
+    // _writer.sendMessage({"name":".mem.total","value":gctotal });
+    // _writer.sendMessage({"name":".mem.used","value":gctotal });
 
-    var gctime:Int = untyped __global__.__hxcpp_hxt_dump_gctime();
-    if (gctime>0) {
-      _writer.sendMessage({"name":Timing.GC,"delta":gctime,"span":gctime});
-    }
+    // var gctime:Int = untyped __global__.__hxcpp_hxt_dump_gctime();
+    // if (gctime>0) {
+    //   _writer.sendMessage({"name":Timing.GC,"delta":gctime,"span":gctime});
+    // }
 
     untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
 #end

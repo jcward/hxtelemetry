@@ -27,7 +27,7 @@ class Main {
   static function main() {
     trace("Start...");
     var cfg = new hxtelemetry.HxTelemetry.Config();
-    cfg.allocations = false;
+    //cfg.allocations = false;
     var hxt = new hxtelemetry.HxTelemetry(cfg);
 
     var refs:Array<Rectangle> = [];
