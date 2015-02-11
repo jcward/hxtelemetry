@@ -41,6 +41,7 @@ class HxTelemetry
   // Member objects
   var _config:Config;
   var _writer:Thread;
+  var _thread_num:Int;
 
   // Timing helpers
   static var _abs_t0_usec:Float = Date.now().getTime()*1000;
@@ -83,9 +84,7 @@ class HxTelemetry
 #if !HXCPP_STACK_TRACE
       throw "Using the HXTelemetry Profiler requires -D HXCPP_STACK_TRACE or in project.xml: <haxedef name=\"HXCPP_STACK_TRACE\" />";
 #end
-      untyped __global__.__hxcpp_hxt_start_telemetry();
-      // Remove initial bias
-      if (_config.allocations) { untyped __global__.__hxcpp_hxt_ignore_allocs(-1); }
+      _thread_num = untyped __global__.__hxcpp_hxt_start_telemetry(_config.profiler, _config.allocations);
     }
 #end
 
@@ -116,8 +115,9 @@ class HxTelemetry
 #if cpp
     untyped __global__.__hxcpp_hxt_ignore_allocs(1);
     if (_config.profiler) {
-      untyped __global__.__hxcpp_hxt_dump_telemetry();
+      untyped __global__.__hxcpp_hxt_stash_telemetry();
     }
+    _writer.sendMessage(_thread_num);
 
     // // TODO: only send if they change, track locally
     // // TODO: support other names, reserved, etc
@@ -215,15 +215,11 @@ class HxTelemetry
     }
 
     while (true) {
-      var data = Thread.readMessage(true);
-      if (data!=null) {
-        if (data.allocations!=null) {
-          // untyped __global__.__hxcpp_hxt_enumerate_allocations(data.allocations, safe_write);
-        } else {
-          safe_write(data);
-        }
-      }
-      if (socket==null) break;
+      var thread_num:Int = Thread.readMessage(true);
+      // TODO: why does this get called twice?
+      trace("Calling dump telemetry with thread_num: "+thread_num+", socket.output="+socket.output);
+      // TODO: @:function cpp dump telemetry, write to socket?  Read directly from cpp data structure?
+      untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num, socket.output);
     }
     trace("HXTelemetry socket thread exiting");
   }
