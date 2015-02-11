@@ -217,7 +217,11 @@ class HxTelemetry
     while (true) {
       var data = Thread.readMessage(true);
       if (data!=null) {
-        safe_write(data);
+        if (data.allocations!=null) {
+          // untyped __global__.__hxcpp_hxt_enumerate_allocations(data.allocations, safe_write);
+        } else {
+          safe_write(data);
+        }
       }
       if (socket==null) break;
     }

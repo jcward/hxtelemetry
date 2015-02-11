@@ -15,15 +15,6 @@ class Rectangle {
 
 class Main {
 
-  static inline function setTimeout(f:Void->Void, d:Int):Void {
-    haxe.Timer.delay(f, d);
-  }
-  static var __t0:Float = haxe.Timer.stamp();
-  public static function getTimer():Float {
-    return Sys.time();
-    //return (haxe.Timer.stamp()-__t0)*1000;
-  }
-
   static function main() {
     trace("Start...");
     var cfg = new hxtelemetry.HxTelemetry.Config();
@@ -35,8 +26,8 @@ class Main {
     // Work on each frame
     var frame:Int = 0;
 
-    var t0 = getTimer();
-    while (getTimer()-t0 < 4) {
+    var t0 = Sys.time();
+    while (Sys.time()-t0 < 4) {
       frame++;
       for (i in 0...2000) {
         refs.push(new Rectangle(Std.random(1000)/1000,
@@ -46,10 +37,13 @@ class Main {
       }
       if (frame%10==0) {
         refs = [];
-        trace(" at frame "+frame+", t="+getTimer());
+        trace(" at frame "+frame+", t="+Sys.time());
       }
       hxt.advance_frame();
     }
-    trace("Exit ("+(frame/(getTimer()-t0))+" fps avg)- is it possible to wait for HXTelemetry socket to drain?");
+    trace("Exit ("+(frame/(Sys.time()-t0))+" fps avg)- waiting a few seconds just in case HXTelemetry socket needs to drain...");
+
+    Sys.sleep(3);
+    trace("Goodbye");
   }
 }
