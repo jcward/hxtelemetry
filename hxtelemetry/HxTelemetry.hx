@@ -157,12 +157,40 @@ class HxTelemetry
     if (_start_times.exists(name)) {
       data.span = Std.int(t-_start_times.get(name));
     }
-    _writer.sendMessage(data);
+    //_writer.sendMessage(data);
     _last = t;
 #if cpp
     untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
 #end
   }
+
+
+    @:functionCode('
+printf("Dumping telemetry from thread %d\\n", thread_num);
+TelemetryFrame* frameData = __hxcpp_hxt_dump_telemetry(thread_num);
+printf("Num samples %d\\n", frameData->samples->size());
+
+// hx::Anon __result = hx::Anon_obj::Create();
+// __result->Add(HX_CSTRING("name") , HX_CSTRING(".swf.name"),false);
+// __result->Add(HX_CSTRING("value") , app_name,false);
+// __result->Add(HX_CSTRING("hxt") , switch_to_nonamf,false);
+
+	::haxe::Serializer s = ::haxe::Serializer_obj::__new();
+	s->serialize(frameData);
+
+
+output->writeString(s->toString());
+
+')
+    private static function test2(output:haxe.io.Output, thread_num:Int) {
+      // Examples
+      //output.writeString("From haxe!");
+      //output.writeInt32(12);
+      //output.writeByte(45);
+      var arr:Array<Int> = new Array<Int>();
+      arr.push(2);
+      arr.push(7);
+    }
 
   private static function start_writer():Void
   {
@@ -200,6 +228,13 @@ class HxTelemetry
       }
     }
 
+    @:functionCode("
+printf('Hello from cpp\n');
+    ")
+    function test() {
+      trace("Hello from HX");
+    }
+
     socket = new Socket();
     try {
       socket.connect(new sys.net.Host(host), port);
@@ -215,11 +250,11 @@ class HxTelemetry
     }
 
     while (true) {
+      // TODO: Accept timing data, too
       var thread_num:Int = Thread.readMessage(true);
-      // TODO: why does this get called twice?
-      trace("Calling dump telemetry with thread_num: "+thread_num+", socket.output="+socket.output);
+      //trace("Calling dump telemetry with thread_num: "+thread_num+", socket.output="+socket.output);
       // TODO: @:function cpp dump telemetry, write to socket?  Read directly from cpp data structure?
-      untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num, socket.output);
+      test2(socket.output, thread_num);
     }
     trace("HXTelemetry socket thread exiting");
   }
