@@ -117,7 +117,7 @@ class HxTelemetry
     if (_config.profiler) {
       untyped __global__.__hxcpp_hxt_stash_telemetry();
     }
-    _writer.sendMessage(_thread_num);
+    _writer.sendMessage({"dump":true, "thread_num":_thread_num});
 
     // // TODO: only send if they change, track locally
     // // TODO: support other names, reserved, etc
@@ -157,7 +157,7 @@ class HxTelemetry
     if (_start_times.exists(name)) {
       data.span = Std.int(t-_start_times.get(name));
     }
-    //_writer.sendMessage(data);
+    _writer.sendMessage(data);
     _last = t;
 #if cpp
     untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
@@ -167,19 +167,20 @@ class HxTelemetry
 
     @:functionCode('
 printf("Dumping telemetry from thread %d\\n", thread_num);
-TelemetryFrame* frameData = __hxcpp_hxt_dump_telemetry(thread_num);
-printf("Num samples %d\\n", frameData->samples->size());
+//Dynamic frameData = __hxcpp_hxt_dump_telemetry(thread_num);
+//printf("Num samples %d\\n", frameData->samples->size());
+//printf("New names %d\\n", frameData->names->length);
 
 // hx::Anon __result = hx::Anon_obj::Create();
 // __result->Add(HX_CSTRING("name") , HX_CSTRING(".swf.name"),false);
 // __result->Add(HX_CSTRING("value") , app_name,false);
 // __result->Add(HX_CSTRING("hxt") , switch_to_nonamf,false);
 
-	::haxe::Serializer s = ::haxe::Serializer_obj::__new();
-	s->serialize(frameData);
-
-
-output->writeString(s->toString());
+//   ::haxe::Serializer s = ::haxe::Serializer_obj::__new();
+//   s->serialize(frameData);
+//  
+//  
+// output->writeString(s->toString());
 
 ')
     private static function test2(output:haxe.io.Output, thread_num:Int) {
@@ -187,9 +188,28 @@ output->writeString(s->toString());
       //output.writeString("From haxe!");
       //output.writeInt32(12);
       //output.writeByte(45);
-      var arr:Array<Int> = new Array<Int>();
-      arr.push(2);
-      arr.push(7);
+      // var arr:Array<UInt> = new Array<UInt>();
+      // arr.push(2);
+			// arr.push(4);
+      // trace(arr.length);
+      //  
+      // var foo:Dynamic = {};
+      // foo.n = 12;
+      // foo.flt = 1.23;
+      // foo.samples = new Array<Int>();
+      // foo.im = new haxe.ds.IntMap<Dynamic>();
+      // foo.im[12] = { type:"String", stackid:12, size:85, ids:(new Array<Int>()) };
+
+      untyped __global__.__hxcpp_hxt_ignore_allocs(1);
+
+      var frameData:Dynamic = untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num);
+
+      var msg:String = haxe.Serializer.run(frameData);
+
+      trace(msg.length);
+
+      untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
+
     }
 
   private static function start_writer():Void
@@ -251,10 +271,19 @@ printf('Hello from cpp\n');
 
     while (true) {
       // TODO: Accept timing data, too
-      var thread_num:Int = Thread.readMessage(true);
-      //trace("Calling dump telemetry with thread_num: "+thread_num+", socket.output="+socket.output);
-      // TODO: @:function cpp dump telemetry, write to socket?  Read directly from cpp data structure?
-      test2(socket.output, thread_num);
+      var data:Dynamic = Thread.readMessage(true);
+      if (data.dump) {
+        var thread_num:Int = data.thread_num;
+        //trace("Calling dump telemetry with thread_num: "+thread_num+", socket.output="+socket.output);
+        // TODO: @:function cpp dump telemetry, write to socket?  Read directly from cpp data structure?
+
+        untyped __global__.__hxcpp_hxt_ignore_allocs(1);
+        var frameData:Dynamic = untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num);
+        safe_write(frameData);
+        untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
+      } else {
+        safe_write(data);
+      }
     }
     trace("HXTelemetry socket thread exiting");
   }
