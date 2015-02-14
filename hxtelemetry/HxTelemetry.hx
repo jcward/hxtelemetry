@@ -167,9 +167,13 @@ class HxTelemetry
 
     @:functionCode('
 printf("Dumping telemetry from thread %d\\n", thread_num);
-//Dynamic frameData = __hxcpp_hxt_dump_telemetry(thread_num);
-//printf("Num samples %d\\n", frameData->samples->size());
-//printf("New names %d\\n", frameData->names->length);
+TelemetryFrame* frame = __hxcpp_hxt_dump_telemetry(thread_num);
+printf("Num samples %d\\n", frame->samples->size());
+printf("New names %d\\n", frame->names->length);
+
+output->writeByte(1); // names
+output->writeInt32(frame->names->length); // names
+
 
 // hx::Anon __result = hx::Anon_obj::Create();
 // __result->Add(HX_CSTRING("name") , HX_CSTRING(".swf.name"),false);
@@ -183,7 +187,12 @@ printf("Dumping telemetry from thread %d\\n", thread_num);
 // output->writeString(s->toString());
 
 ')
-    private static function test2(output:haxe.io.Output, thread_num:Int) {
+    private static function test2(thread_num:Int, output:haxe.io.Output) {
+      var arr:Array<String> = null;
+      for (i in 0...arr.length) {
+        trace(arr[i]);
+      }
+
       // Examples
       //output.writeString("From haxe!");
       //output.writeInt32(12);
@@ -200,15 +209,26 @@ printf("Dumping telemetry from thread %d\\n", thread_num);
       // foo.im = new haxe.ds.IntMap<Dynamic>();
       // foo.im[12] = { type:"String", stackid:12, size:85, ids:(new Array<Int>()) };
 
-      untyped __global__.__hxcpp_hxt_ignore_allocs(1);
-
-      var frameData:Dynamic = untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num);
-
-      var msg:String = haxe.Serializer.run(frameData);
-
-      trace(msg.length);
-
-      untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
+      //untyped __global__.__hxcpp_hxt_ignore_allocs(1);
+      // 
+      //var frameData:Dynamic = untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num);
+      // 
+      //// These are too large, they crash serializer...
+      //Reflect.setField(frameData, "allocations", null);
+      //Reflect.setField(frameData, "collections", null);
+      // 
+      //var b = haxe.io.Bytes.alloc(128);
+      //b.set(0, 10);
+      //b.set(1, 11);
+      // 
+      //var bd = new haxe.io.BytesData();
+      //bd.blit();
+      // 
+      //var msg:String = haxe.Serializer.run(frameData);
+      // 
+      //trace(msg.length);
+      // 
+      //untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
 
     }
 
@@ -248,13 +268,6 @@ printf("Dumping telemetry from thread %d\\n", thread_num);
       }
     }
 
-    @:functionCode("
-printf('Hello from cpp\n');
-    ")
-    function test() {
-      trace("Hello from HX");
-    }
-
     socket = new Socket();
     try {
       socket.connect(new sys.net.Host(host), port);
@@ -278,8 +291,14 @@ printf('Hello from cpp\n');
         // TODO: @:function cpp dump telemetry, write to socket?  Read directly from cpp data structure?
 
         untyped __global__.__hxcpp_hxt_ignore_allocs(1);
-        var frameData:Dynamic = untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num);
-        safe_write(frameData);
+
+        test2(thread_num, socket.output);
+
+        //untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num, socket.output);
+        //Reflect.setField(frameData, "allocations", null);
+        //Reflect.setField(frameData, "collections", null);
+        //safe_write(frameData);
+
         untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
       } else {
         safe_write(data);
