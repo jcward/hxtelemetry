@@ -166,14 +166,71 @@ class HxTelemetry
 
 
     @:functionCode('
-printf("Dumping telemetry from thread %d\\n", thread_num);
+//printf("Dumping telemetry from thread %d\\n", thread_num);
 TelemetryFrame* frame = __hxcpp_hxt_dump_telemetry(thread_num);
-printf("Num samples %d\\n", frame->samples->size());
-printf("New names %d\\n", frame->names->length);
+//printf("Num samples %d\\n", frame->samples->size());
 
-output->writeByte(1); // names
-output->writeInt32(frame->names->length); // names
+// printf("Dumped telemetry, samples=%d, names=%d, allocs=%d, collections=%d\\n",
+//         frame->samples->size(),
+//         frame->names->size(),
+//         frame->allocations->size(),
+//   			frame->collections->size());
 
+int i=0;
+int size = frame->names->size();
+if (frame->samples!=0) {
+
+  // Write names
+  output->writeByte(10);
+  output->writeInt32(frame->names->size());
+  i = 0;
+  size = frame->names->size();
+  while (i<size) {
+    output->writeString(String(frame->names->at(i++)));
+    output->writeByte(0);
+  }
+
+  // Write samples
+  output->writeByte(11);
+  output->writeInt32(frame->samples->size());
+  i = 0;
+	size = frame->samples->size();
+  while (i<size) {
+    output->writeInt32(frame->samples->at(i++));
+  }
+
+}
+
+if (frame->allocations!=0) {
+
+  // Write stacks
+  output->writeByte(11);
+  output->writeInt32(frame->stacks->size());
+  i = 0;
+	size = frame->stacks->size();
+  while (i<size) {
+    output->writeInt32(frame->stacks->at(i++));
+  }
+
+  // Write allocations
+  output->writeByte(12);
+  output->writeInt32(frame->allocations->size());
+  i = 0;
+	size = frame->allocations->size();
+  while (i<size) {
+    output->writeInt32(frame->allocations->at(i++));
+  }
+
+  // Write collections
+  output->writeByte(11);
+  output->writeInt32(frame->collections->size());
+  i = 0;
+	size = frame->collections->size();
+  while (i<size) {
+    output->writeInt32(frame->collections->at(i++));
+  }
+
+}
 
 // hx::Anon __result = hx::Anon_obj::Create();
 // __result->Add(HX_CSTRING("name") , HX_CSTRING(".swf.name"),false);
@@ -189,9 +246,9 @@ output->writeInt32(frame->names->length); // names
 ')
     private static function test2(thread_num:Int, output:haxe.io.Output) {
       var arr:Array<String> = null;
-      for (i in 0...arr.length) {
-        trace(arr[i]);
-      }
+      //for (i in 0...arr.length) {
+      //  trace(arr[i]);
+      //}
 
       // Examples
       //output.writeString("From haxe!");
