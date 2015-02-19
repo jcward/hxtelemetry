@@ -68,13 +68,6 @@ class HxTelemetry
       return;
     }
 
-    _method_names = new Array<String>();
-    _samples = new Array<Int>();
-    _alloc_types = new Array<String>();
-    _alloc_details = new Array<Int>();
-    _alloc_stackidmap = new Array<Int>();
-    _collections = new Array<Int>();
-
 #if cpp
     if (_config.allocations && !_config.profiler) {
       throw "HxTelemetry config.allocations requires config.profiler";
@@ -102,12 +95,6 @@ class HxTelemetry
 #end
   }
 
-  var _method_names:Array<String>;
-  var _samples:Array<Int>;
-  var _alloc_types:Array<String>;
-  var _alloc_details:Array<Int>;
-  var _alloc_stackidmap:Array<Int>;
-  var _collections:Array<Int>;
   public function advance_frame(e=null)
   {
     if (_writer==null) return;
@@ -177,7 +164,7 @@ TelemetryFrame* frame = __hxcpp_hxt_dump_telemetry(thread_num);
 //   			frame->collections->size());
 
 int i=0;
-int size = frame->names->size();
+int size;
 if (frame->samples!=0) {
 
   // Write names
@@ -221,6 +208,7 @@ if (frame->allocations!=0) {
 
   // Write allocations
   if (frame->allocations->size()>0) {
+    // printf(\" -- writing allocs: %d\\n\", frame->allocations->size());
     output->writeByte(13);
     output->writeInt32(frame->allocations->size());
     i = 0;
@@ -240,11 +228,21 @@ if (frame->allocations!=0) {
       output->writeInt32(frame->collections->at(i++));
     }
   }
+
+  // GC time
+	hx::Anon gct = hx::Anon_obj::Create();
+	gct->Add(HX_CSTRING("name") , HX_CSTRING(".gc.custom"),false);
+	gct->Add(HX_CSTRING("delta") , (int)frame->gctime,false);
+	gct->Add(HX_CSTRING("span") , (int)frame->gctime,false);
+  safe_write(gct);
 }
 
 ')
-    private static function test2(thread_num:Int, output:haxe.io.Output) {
-      var arr:Array<String> = null;
+    private static function dump_hxt(thread_num:Int,
+                                     output:haxe.io.Output,
+                                     safe_write:Dynamic->Void) {
+      //safe_write({"name":Timing.GC,"delta":0, "span":0});
+
       //for (i in 0...arr.length) {
       //  trace(arr[i]);
       //}
@@ -349,7 +347,7 @@ if (frame->allocations!=0) {
 
         untyped __global__.__hxcpp_hxt_ignore_allocs(1);
 
-        test2(thread_num, socket.output);
+        dump_hxt(thread_num, socket.output, safe_write);
 
         //untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num, socket.output);
         //Reflect.setField(frameData, "allocations", null);
