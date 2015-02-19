@@ -181,22 +181,27 @@ int size = frame->names->size();
 if (frame->samples!=0) {
 
   // Write names
-  output->writeByte(10);
-  output->writeInt32(frame->names->size());
-  i = 0;
-  size = frame->names->size();
-  while (i<size) {
-    output->writeString(String(frame->names->at(i++)));
-    output->writeByte(0);
+  if (frame->names->size()>0) {
+    output->writeByte(10);
+    output->writeInt32(frame->names->size());
+    i = 0;
+    size = frame->names->size();
+    while (i<size) {
+      String s = String(frame->names->at(i++));
+      output->writeInt32(s.length);
+      output->writeString(s);
+    }
   }
 
   // Write samples
-  output->writeByte(11);
-  output->writeInt32(frame->samples->size());
-  i = 0;
-	size = frame->samples->size();
-  while (i<size) {
-    output->writeInt32(frame->samples->at(i++));
+  if (frame->samples->size()>0) {
+    output->writeByte(11);
+    output->writeInt32(frame->samples->size());
+    i = 0;
+    size = frame->samples->size();
+    while (i<size) {
+      output->writeInt32(frame->samples->at(i++));
+    }
   }
 
 }
@@ -204,44 +209,38 @@ if (frame->samples!=0) {
 if (frame->allocations!=0) {
 
   // Write stacks
-  output->writeByte(11);
-  output->writeInt32(frame->stacks->size());
-  i = 0;
-	size = frame->stacks->size();
-  while (i<size) {
-    output->writeInt32(frame->stacks->at(i++));
+  if (frame->stacks->size()>0) {
+    output->writeByte(12);
+    output->writeInt32(frame->stacks->size());
+    i = 0;
+    size = frame->stacks->size();
+    while (i<size) {
+      output->writeInt32(frame->stacks->at(i++));
+    }
   }
 
   // Write allocations
-  output->writeByte(12);
-  output->writeInt32(frame->allocations->size());
-  i = 0;
-	size = frame->allocations->size();
-  while (i<size) {
-    output->writeInt32(frame->allocations->at(i++));
+  if (frame->allocations->size()>0) {
+    output->writeByte(13);
+    output->writeInt32(frame->allocations->size());
+    i = 0;
+    size = frame->allocations->size();
+    while (i<size) {
+      output->writeInt32(frame->allocations->at(i++));
+    }
   }
 
   // Write collections
-  output->writeByte(11);
-  output->writeInt32(frame->collections->size());
-  i = 0;
-	size = frame->collections->size();
-  while (i<size) {
-    output->writeInt32(frame->collections->at(i++));
+  if (frame->collections->size()>0) {
+    output->writeByte(14);
+    output->writeInt32(frame->collections->size());
+    i = 0;
+    size = frame->collections->size();
+    while (i<size) {
+      output->writeInt32(frame->collections->at(i++));
+    }
   }
-
 }
-
-// hx::Anon __result = hx::Anon_obj::Create();
-// __result->Add(HX_CSTRING("name") , HX_CSTRING(".swf.name"),false);
-// __result->Add(HX_CSTRING("value") , app_name,false);
-// __result->Add(HX_CSTRING("hxt") , switch_to_nonamf,false);
-
-//   ::haxe::Serializer s = ::haxe::Serializer_obj::__new();
-//   s->serialize(frameData);
-//  
-//  
-// output->writeString(s->toString());
 
 ')
     private static function test2(thread_num:Int, output:haxe.io.Output) {
@@ -315,6 +314,7 @@ if (frame->allocations!=0) {
       try {
         if (!amf_mode) {
           var msg:String = haxe.Serializer.run(data);
+          socket.output.writeByte(1);
           socket.output.writeInt32(msg.length);
           socket.output.writeString(msg);
         } else {
