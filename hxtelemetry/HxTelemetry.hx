@@ -106,11 +106,12 @@ class HxTelemetry
     }
     _writer.sendMessage({"dump":true, "thread_num":_thread_num});
 
-    // // TODO: only send if they change, track locally
-    // // TODO: support other names, reserved, etc
-    // var gctotal:Int = Std.int((untyped __global__.__hxcpp_gc_reserved_bytes())/1024);
-    // _writer.sendMessage({"name":".mem.total","value":gctotal });
-    // _writer.sendMessage({"name":".mem.used","value":gctotal });
+    // TODO: only send if they change, track locally
+    // TODO: support other names, reserved, etc
+    var gctotal:Int = Std.int((untyped __global__.__hxcpp_gc_reserved_bytes())/1024);
+    var gcused:Int = Std.int((untyped __global__.__hxcpp_gc_used_bytes())/1024);
+    _writer.sendMessage({"name":".mem.total","value":gctotal });
+    _writer.sendMessage({"name":".mem.managed.used","value":gcused });
 
     // var gctime:Int = untyped __global__.__hxcpp_hxt_dump_gctime();
     // if (gctime>0) {
@@ -330,7 +331,12 @@ if (frame->allocations!=0) {
         writer = new Amf3Writer(socket.output);
       }
       safe_write({"name":".swf.name","value":app_name, "hxt":switch_to_nonamf});
-      if (switch_to_nonamf) amf_mode = false;
+      if (switch_to_nonamf) {
+        amf_mode = false;
+        writer = null;
+      } else {
+        throw "HXTelemetry no longer supports amf mode!";
+      }
       hxt_thread.sendMessage(true);
     } catch (e:Dynamic) {
       trace("Failed connecting to Telemetry host at "+host+":"+port);
