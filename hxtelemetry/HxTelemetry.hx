@@ -219,6 +219,18 @@ if (frame->allocations!=0) {
     }
   }
 
+  // Write reallocations
+  if (frame->reallocations->size()>0) {
+    // printf(\" -- writing reallocs: %d\\n\", frame->reallocations->size());
+    output->writeByte(15);
+    output->writeInt32(frame->reallocations->size());
+    i = 0;
+    size = frame->reallocations->size();
+    while (i<size) {
+      output->writeInt32(frame->reallocations->at(i++));
+    }
+  }
+
   // Write collections
   if (frame->collections->size()>0) {
     output->writeByte(14);
