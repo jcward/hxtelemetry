@@ -241,14 +241,14 @@ if (frame->allocations!=0) {
       output->writeInt32(frame->collections->at(i++));
     }
   }
-
-  // GC time
-	hx::Anon gct = hx::Anon_obj::Create();
-	gct->Add(HX_CSTRING("name") , HX_CSTRING(".gc.custom"),false);
-	gct->Add(HX_CSTRING("delta") , (int)frame->gctime,false);
-	gct->Add(HX_CSTRING("span") , (int)frame->gctime,false);
-  safe_write(gct);
 }
+
+// GC time
+hx::Anon gct = hx::Anon_obj::Create();
+gct->Add(HX_CSTRING("name") , HX_CSTRING(".gc.custom"),false);
+gct->Add(HX_CSTRING("delta") , (int)frame->gctime,false);
+gct->Add(HX_CSTRING("span") , (int)frame->gctime,false);
+safe_write(gct);
 
 ')
     private static function dump_hxt(thread_num:Int,
