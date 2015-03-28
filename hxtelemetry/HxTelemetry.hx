@@ -16,6 +16,7 @@ class Config
   public var auto_event_loop:Bool = true;
   public var cpu_usage:Bool = true;
   public var profiler:Bool = true;
+  public var trace:Bool = true;
   public var allocations:Bool = true;
   public var singleton_instance:Bool = true;
 }
@@ -66,6 +67,16 @@ class HxTelemetry
     if (!Thread.readMessage(true)) {
       _writer = null;
       return;
+    }
+
+    // Trace override for capture:
+    // TODO: doesn't support multiple instances?
+    if (config.trace) {
+      var oldTrace = haxe.Log.trace; // store old function
+      haxe.Log.trace = function( v, ?infos ) : Void {
+        _writer.sendMessage({"name":".trace", "value":(infos==null ? '' : infos.fileName + ":" + infos.lineNumber + ": ")+cast(v, String)});
+        oldTrace(v,infos);
+      }
     }
 
 #if cpp
