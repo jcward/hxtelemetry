@@ -46,8 +46,12 @@ class Main extends Sprite {
     var frame:Int = 0;
     var stage = flash.Lib.stage;
 
+    trace("Here we go...");
+
 		stage.addEventListener(openfl.events.Event.ENTER_FRAME, function(e) {
 				frame++;
+
+        if (frame%10==0) trace("At frame: "+frame);
 
 				hxtelemetry.Singleton.start_timing(Timing.USER);
         function new_bmp() {
