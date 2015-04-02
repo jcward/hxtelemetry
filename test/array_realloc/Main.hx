@@ -13,15 +13,17 @@ class Main {
     var frame:Int = 0;
 
     var t0 = Sys.time();
-    while (Sys.time()-t0 < 2) {
+    while (Sys.time()-t0 < 30) {
       frame++;
-      for (i in 0...100000) {
-        array.push(i);
-      }
-      if (frame%100==0) {
-        trace(" at frame "+frame+", len="+array.length+", bytes="+(array.length*4)+" t="+Sys.time());
-      }
-      if (frame%1000==0) { break; } // debug
+      if (frame<50) {
+        //if (frame%5==0) array = [];
+        for (i in 0...100000) {
+          array.push(i);
+        }
+      } else break;
+      //if (frame%100==0) {
+      //  trace(" at frame "+frame+", len="+array.length+", bytes="+(array.length*4)+" t="+Sys.time());
+      //}
       Sys.sleep(0.1);
       hxt.advance_frame();
     }
