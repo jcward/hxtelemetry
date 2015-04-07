@@ -205,7 +205,7 @@ if (frame->samples!=0) {
 
 }
 
-if (frame->allocations!=0) {
+if (frame->allocation_data!=0) {
 
   // Write stacks
   if (frame->stacks->size()>0) {
@@ -219,37 +219,14 @@ if (frame->allocations!=0) {
   }
 
   // Write allocations
-  if (frame->allocations->size()>0) {
-    // printf(\" -- writing allocs: %d\\n\", frame->allocations->size());
+  if (frame->allocation_data->size()>0) {
+    // printf(\" -- writing allocs: %d\\n\", frame->allocation_data->size());
     output->writeByte(13);
-    output->writeInt32(frame->allocations->size());
+    output->writeInt32(frame->allocation_data->size());
     i = 0;
-    size = frame->allocations->size();
+    size = frame->allocation_data->size();
     while (i<size) {
-      output->writeInt32(frame->allocations->at(i++));
-    }
-  }
-
-  // Write reallocations
-  if (frame->reallocations->size()>0) {
-    // printf(\" -- writing reallocs: %d\\n\", frame->reallocations->size());
-    output->writeByte(15);
-    output->writeInt32(frame->reallocations->size());
-    i = 0;
-    size = frame->reallocations->size();
-    while (i<size) {
-      output->writeInt32(frame->reallocations->at(i++));
-    }
-  }
-
-  // Write collections
-  if (frame->collections->size()>0) {
-    output->writeByte(14);
-    output->writeInt32(frame->collections->size());
-    i = 0;
-    size = frame->collections->size();
-    while (i<size) {
-      output->writeInt32(frame->collections->at(i++));
+      output->writeInt32(frame->allocation_data->at(i++));
     }
   }
 }
