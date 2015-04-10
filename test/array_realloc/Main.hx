@@ -8,7 +8,7 @@ class Main {
     cfg.allocations = true;
     var hxt = new hxtelemetry.HxTelemetry(cfg);
 
-    var array:Array<Int> = [];
+    var array:Array<String> = [];
 
     var frame:Int = 0;
 
@@ -17,8 +17,8 @@ class Main {
       frame++;
       if (frame<50) {
         //if (frame%5==0) array = [];
-        for (i in 0...100000) {
-          array.push(i);
+        for (i in 0...1000) {
+          array.push(i+" is a number");
         }
       } else break;
       //if (frame%100==0) {
