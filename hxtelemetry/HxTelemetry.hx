@@ -6,6 +6,7 @@ import haxe.ds.StringMap;
 
 #if cpp
   import cpp.vm.Thread;
+  import cpp.vm.Mutex;
 #end
 
 class Config
@@ -38,6 +39,7 @@ class HxTelemetry
 {
   // Optional: singleton accessors
   public static var singleton(default,null):HxTelemetry;
+  public static var mutex:Mutex = new Mutex();
 
   // Member objects
   var _config:Config;
@@ -54,10 +56,20 @@ class HxTelemetry
     if (config==null) config = new Config();
     _config = config;
 
+#if cpp
+    mutex.acquire();
+#end
     if (_config.singleton_instance) {
-      if (singleton!=null) throw "Cannot have two singletons of HxTelemetry!";
+      if (singleton!=null) {
+        trace("Cannot have two singletons of HxTelemetry!");
+        throw "Cannot have two singletons of HxTelemetry!";
+      }
       singleton = this;
     }
+
+#if cpp
+    mutex.release();
+#end
 
     _writer = Thread.create(start_writer);
     _writer.sendMessage(Thread.current());
@@ -66,6 +78,9 @@ class HxTelemetry
     _writer.sendMessage(config.app_name);
     if (!Thread.readMessage(true)) {
       _writer = null;
+#if cpp
+    mutex.release();
+#end
       return;
     }
 
@@ -81,15 +96,19 @@ class HxTelemetry
 
 #if cpp
     if (_config.allocations && !_config.profiler) {
+      mutex.release();
       throw "HxTelemetry config.allocations requires config.profiler";
     }
 
     if (_config.profiler) {
 #if !HXCPP_STACK_TRACE
+      mutex.release();
       throw "Using the HXTelemetry Profiler requires -D HXCPP_STACK_TRACE or in project.xml: <haxedef name=\"HXCPP_STACK_TRACE\" />";
 #end
       _thread_num = untyped __global__.__hxcpp_hxt_start_telemetry(_config.profiler, _config.allocations);
     }
+
+    mutex.release();
 #end
 
     if (config.auto_event_loop) setup_event_loop();
@@ -324,24 +343,45 @@ safe_write(gct);
       }
     }
 
-    socket = new Socket();
-    try {
-      socket.connect(new sys.net.Host(host), port);
-      if (amf_mode) {
-        writer = new Amf3Writer(socket.output);
-      }
-      safe_write({"name":".swf.name","value":app_name, "hxt":switch_to_nonamf});
-      if (switch_to_nonamf) {
-        amf_mode = false;
-        writer = null;
-      } else {
-        throw "HXTelemetry no longer supports amf mode!";
-      }
-      hxt_thread.sendMessage(true);
-    } catch (e:Dynamic) {
-      trace("Failed connecting to Telemetry host at "+host+":"+port);
-      hxt_thread.sendMessage(false);
+    // Creating sockets seems to need mutex
+    mutex.acquire();
+
+    var connected = false;
+    var retries = 3;
+    function try_connect() {
+      socket = new Socket();
+      try {
+        socket.connect(new sys.net.Host(host), port);
+        if (amf_mode) {
+          writer = new Amf3Writer(socket.output);
+        }
+        safe_write({"name":".swf.name","value":app_name, "hxt":switch_to_nonamf});
+        if (switch_to_nonamf) {
+          amf_mode = false;
+          writer = null;
+        } else {
+          mutex.release();
+          throw "HXTelemetry no longer supports amf mode!";
+        }
+        connected = true;
+      } catch (e:Dynamic) { }
     }
+
+    while (true) {
+      try_connect();
+      if (connected) {
+        hxt_thread.sendMessage(true);
+        break;
+      } else if (--retries == 0) {
+        trace("HxTelemetry failed to connect to "+host+":"+port);
+        hxt_thread.sendMessage(false);
+        break;
+      } else {
+        Sys.sleep(0.1);
+      }
+    }
+
+    mutex.release();
 
     while (true) {
       // TODO: Accept timing data, too

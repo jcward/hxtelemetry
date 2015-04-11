@@ -1,0 +1,6 @@
+765 - not connected
+695 - nc capture (profiler)
+680 - hxScout profiler
+20 - nc deallocations
+250 - nc AllocsPerStackId (not yet dumping)
+270 - nc dump refactor
