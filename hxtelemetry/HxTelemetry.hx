@@ -11,6 +11,7 @@ import haxe.ds.StringMap;
 
 class Config
 {
+  public function new() {}
   public var app_name:String = "My App";
   public var host:String = "localhost";
   public var port:Int = 7934;
