@@ -23,10 +23,10 @@ class Main extends Sprite {
     //cfg.allocations = false;
 #if android
     cfg.app_name = "Android App";
+    cfg.host = "10.0.1.33";
 #else
     cfg.app_name = "Test App";
 #end
-    cfg.host = "10.0.1.33";
     var hxt = new hxtelemetry.HxTelemetry(cfg);
 		
     trace("Adding bitmap");
