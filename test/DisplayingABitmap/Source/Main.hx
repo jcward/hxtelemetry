@@ -18,10 +18,18 @@ class Main extends Sprite {
 		
 		super ();
 
+    trace("Starting telemetry...");
     var cfg = new hxtelemetry.HxTelemetry.Config();
     //cfg.allocations = false;
+#if android
+    cfg.app_name = "Android App";
+#else
+    cfg.app_name = "Test App";
+#end
+    cfg.host = "10.0.1.33";
     var hxt = new hxtelemetry.HxTelemetry(cfg);
 		
+    trace("Adding bitmap");
 		var bitmap = new Bitmap (Assets.getBitmapData ("assets/openfl.png"));
 		addChild (bitmap);
 		
@@ -32,7 +40,8 @@ class Main extends Sprite {
 		fps.mouseEnabled = false;
 		stage.addChild(fps);
 
-    test_profalloc();
+    trace("Starting shape allocator");
+		test_profalloc();
   }
 
   static function ls():LongStructor
@@ -44,7 +53,7 @@ class Main extends Sprite {
   static function test_profalloc()
   {
     var frame:Int = 0;
-    var stage = flash.Lib.stage;
+    var stage = flash.Lib.current.stage;
 
     trace("Here we go...");
 

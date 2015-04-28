@@ -15,5 +15,8 @@
 	<haxelib name="hxtelemetry" />
   <haxedef name="HXCPP_STACK_TRACE" />
   <haxedef name="HXCPP_TELEMETRY" />
+<!--  <haxedef name="HXCPP_PROFILE_EXTERNS" /> Very expensive -->
+
+  <android permission="android.permission.INTERNET" />
 
 </project>
