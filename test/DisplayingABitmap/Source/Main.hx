@@ -18,17 +18,57 @@ class Main extends Sprite {
 		
 		super ();
 
-    trace("Starting telemetry...");
-    var cfg = new hxtelemetry.HxTelemetry.Config();
-    //cfg.allocations = false;
-#if android
-    cfg.app_name = "Android App";
-    cfg.host = "10.0.1.33";
-#else
-    cfg.app_name = "Test App";
-#end
-    var hxt = new hxtelemetry.HxTelemetry(cfg);
-		
+    //  trace("Starting telemetry...");
+    //  var cfg = new hxtelemetry.HxTelemetry.Config();
+    //  //cfg.allocations = false;
+//#if android
+//		cfg.app_name = "Android App";
+//		cfg.host = "10.0.1.33";
+//#else
+//		cfg.app_name = "Test App";
+//#end 
+    //  var hxt = new hxtelemetry.HxTelemetry(cfg);
+		//   
+    //   
+    //  Sys.sleep(0.033); hxt.advance_frame(); // frame 1
+    //  Sys.sleep(0.033); hxt.advance_frame(); // frame 2
+    //   
+    //  hxtelemetry.Singleton.start_timing(Timing.USER);
+    //  Sys.sleep(0.005); // 5ms user time
+    //  hxtelemetry.Singleton.end_timing(Timing.USER);
+    //  hxtelemetry.Singleton.start_timing(Timing.RENDER);
+    //  Sys.sleep(0.005); // 5ms user time
+    //  hxtelemetry.Singleton.end_timing(Timing.RENDER);
+    //  Sys.sleep(0.033-0.010); hxt.advance_frame(); // frame 3
+    //   
+    //  Sys.sleep(0.033); hxt.advance_frame(); // frame 4
+    //  Sys.sleep(0.033); hxt.advance_frame(); // frame 5
+    //   
+    //  hxtelemetry.Singleton.start_timing(Timing.USER);
+    //  Sys.sleep(0.005); // 5ms user time
+    //  hxtelemetry.Singleton.start_timing(Timing.RENDER);
+    //  Sys.sleep(0.005); // 5ms user time
+    //  hxtelemetry.Singleton.end_timing(Timing.RENDER);
+    //  hxtelemetry.Singleton.end_timing(Timing.USER);
+    //  Sys.sleep(0.033-0.010); hxt.advance_frame(); // frame 6
+    //   
+    //  hxtelemetry.Singleton.start_timing(Timing.USER);
+    //  Sys.sleep(0.005); // 5ms user time
+    //  hxtelemetry.Singleton.start_timing(Timing.USER+".event_handlers");
+    //  Sys.sleep(0.005); // 5ms user time
+    //  hxtelemetry.Singleton.end_timing(Timing.USER+".event_handlers");
+    //  hxtelemetry.Singleton.start_timing(Timing.USER+".foo");
+    //  Sys.sleep(0.005); // 5ms user time
+    //  hxtelemetry.Singleton.end_timing(Timing.USER+".foo");
+    //  hxtelemetry.Singleton.end_timing(Timing.USER);
+    //  Sys.sleep(0.033-0.015); hxt.advance_frame(); // frame 6
+    //   
+    //  Sys.sleep(0.033); hxt.advance_frame(); // frame 7
+    //  Sys.sleep(0.033); hxt.advance_frame(); // frame 8
+    //  Sys.sleep(0.033); hxt.advance_frame(); // frame 9
+    //  Sys.sleep(0.033); hxt.advance_frame(); // frame 10
+
+
     trace("Adding bitmap");
 		var bitmap = new Bitmap (Assets.getBitmapData ("assets/openfl.png"));
 		addChild (bitmap);
@@ -62,7 +102,6 @@ class Main extends Sprite {
 
         if (frame%10==0) trace("At frame: "+frame);
 
-				hxtelemetry.Singleton.start_timing(Timing.USER);
         function new_bmp() {
           //var bmp = new Bitmap(Assets.getBitmapData ("assets/openfl.png"));
           var bmp = new openfl.display.Shape();
@@ -92,7 +131,6 @@ class Main extends Sprite {
         }
         for (i in 0...2) new_bmp();
         stage.addChild(Main.fps);
-				hxtelemetry.Singleton.end_timing(Timing.USER);
 
 				//if (frame%20==5) {
         //  var b:ByteArray = new ByteArray();

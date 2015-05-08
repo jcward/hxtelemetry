@@ -8,32 +8,49 @@ import haxe.ds.StringMap;
   import cpp.vm.Thread;
   import cpp.vm.Mutex;
 #end
+//import haxe.CallStack;
 
 class Config
 {
-  public function new() {}
+  public function new() {};
   public var app_name:String = "My App";
   public var host:String = "localhost";
   public var port:Int = 7934;
-  public var auto_event_loop:Bool = true;
   public var cpu_usage:Bool = true;
   public var profiler:Bool = true;
   public var trace:Bool = true;
   public var allocations:Bool = true;
   public var singleton_instance:Bool = true;
+  public var activity_descriptors:Array<ActivityDescriptor> = null;
 }
+
+typedef ActivityStackElem = {
+  name:String,
+  t0:Float
+}
+
+typedef ActivityDescriptor = {
+  name:String,
+  description:String,
+  color:Int
+};
 
 class Timing {
   // Couldn't get an enum to work well wrt scope/access, still needed toString() anyway
 
   // Scout compatibility issue - real names
-  public static inline var GC:String = ".gc.custom";
-  public static inline var USER:String = ".as.doactions";
-  public static inline var RENDER:String = ".rend.custom";
-  public static inline var OTHER:String = ".other.custom";
-  public static inline var NET:String = ".net.custom";
-  public static inline var ENTER:String = ".enter";
-  // CUSTOM(s:String, color:Int); // TODO: implement me? Sounds cool!
+  public static inline var GC:String = ".gc";
+  public static inline var USER:String = ".user";
+  public static inline var RENDER:String = ".render";
+
+  public static var DEFAULT_DESCRIPTORS:Array<ActivityDescriptor> = [
+    { name:".gc", description:"Garbage Collection", color:0xdd5522 },
+    { name:".user", description:"User Code", color:0x2288cc },
+    { name:".event_handler", description:"Event Handler", color:0x2288cc },
+    { name:".render", description:"Rendering", color:0x66aa66 },
+  ];
+
+  public static inline var FRAME_DELIMITER:String = ".enter";
 }
 
 class HxTelemetry
@@ -57,6 +74,10 @@ class HxTelemetry
     if (config==null) config = new Config();
     _config = config;
 
+    if (_config.activity_descriptors==null) {
+      _config.activity_descriptors = Timing.DEFAULT_DESCRIPTORS;
+    }
+
 #if cpp
     mutex.acquire();
 #end
@@ -77,6 +98,8 @@ class HxTelemetry
     _writer.sendMessage(config.host);
     _writer.sendMessage(config.port);
     _writer.sendMessage(config.app_name);
+    _writer.sendMessage(haxe.Serializer.run(config.activity_descriptors));
+
     if (!Thread.readMessage(true)) {
       _writer = null;
 #if cpp
@@ -90,7 +113,7 @@ class HxTelemetry
     if (config.trace) {
       var oldTrace = haxe.Log.trace; // store old function
       haxe.Log.trace = function( v, ?infos ) : Void {
-        _writer.sendMessage({"name":".trace", "value":(infos==null ? '' : infos.fileName + ":" + infos.lineNumber + ": ")+cast(v, String)});
+        if (_writer!=null) _writer.sendMessage({"name":".trace", "value":(infos==null ? '' : infos.fileName + ":" + infos.lineNumber + ": ")+cast(v, String)});
         oldTrace(v,infos);
       }
     }
@@ -111,22 +134,20 @@ class HxTelemetry
 
     mutex.release();
 #end
-
-    if (config.auto_event_loop) setup_event_loop();
   }
 
-  function setup_event_loop():Void
-  {
-#if openfl_legacy
-    openfl.Lib.stage.addEventListener("HXT_BEFORE_FRAME", advance_frame);
-#elseif openfl
-    openfl.Lib.current.stage.addEventListener("HXT_BEFORE_FRAME", advance_frame);
-#elseif lime
-    trace("Does lime have an event loop?");
-#else
-    trace("TODO: create separate thread for event loop? e.g. commandline tools");
-#end
-  }
+//  function setup_event_loop():Void
+//  {
+//#if openfl_legacy
+//    openfl.Lib.stage.addEventListener("HXT_BEFORE_FRAME", advance_frame);
+//#elseif openfl
+//    openfl.Lib.current.stage.addEventListener("HXT_BEFORE_FRAME", advance_frame);
+//#elseif lime
+//    trace("Does lime have an event loop?");
+//#else
+//    trace("TODO: create separate thread for event loop? e.g. commandline tools");
+//#end
+//  }
 
   public function advance_frame(e=null)
   {
@@ -154,19 +175,30 @@ class HxTelemetry
     untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
 #end
 
-    end_timing(Timing.ENTER);
+    // Special-case frame delimiter
+    end_timing(Timing.FRAME_DELIMITER, true);
   }
 
   var _last = timestamp_us();
-  var _start_times:StringMap<Float> = new StringMap<Float>();
+  var _activity_stack:Array<ActivityStackElem> = [];
+
+  public inline function telemetry_error(err:String):Void
+  {
+    trace("Telemetry terminating at:");
+    trace(haxe.CallStack.toString(haxe.CallStack.callStack()));
+    _writer.sendMessage({"exit":true});
+    _writer = null;
+  }
+
   public function start_timing(name:String):Void
   {
     if (_writer==null) return;
 
     var t = timestamp_us();
-    _start_times.set(name, t);
+    _activity_stack.push({name:name, t0:t});
   }
-  public function end_timing(name:String):Void
+
+  public function end_timing(name:String, is_delimiter:Bool=false):Void
   {
     if (_writer==null) return;
 
@@ -175,10 +207,17 @@ class HxTelemetry
 #end
     var t = timestamp_us();
     var data:Dynamic = {"name":name,"delta":Std.int(t-_last)}
-    if (_start_times.exists(name)) {
-      data.span = Std.int(t-_start_times.get(name));
+    if (is_delimiter) {
+      _writer.sendMessage(data);
+    } else {
+      var top = _activity_stack.pop();
+      if (top!=null && top.name==name) {
+        data.span = Std.int(t-top.t0);
+        _writer.sendMessage(data);
+      } else {
+        telemetry_error("WARNING: Inconsistent start/end timing, stack expected "+name+" but got "+top);
+      }
     }
-    _writer.sendMessage(data);
     _last = t;
 #if cpp
     untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
@@ -255,7 +294,7 @@ if (frame->allocation_data!=0) {
 
 // GC time
 hx::Anon gct = hx::Anon_obj::Create();
-gct->Add(HX_CSTRING("name") , HX_CSTRING(".gc.custom"),false);
+gct->Add(HX_CSTRING("name") , HX_CSTRING(".gc"),false);
 gct->Add(HX_CSTRING("delta") , (int)frame->gctime,false);
 gct->Add(HX_CSTRING("span") , (int)frame->gctime,false);
 safe_write(gct);
@@ -318,6 +357,7 @@ safe_write(gct);
     var host:String = Thread.readMessage(true);
     var port:Int = Thread.readMessage(true);
     var app_name:String = Thread.readMessage(true);
+    var activity_descriptors:String = Thread.readMessage(true);
 
     function cleanup()
     {
@@ -358,7 +398,7 @@ safe_write(gct);
         if (amf_mode) {
           writer = new Amf3Writer(socket.output);
         }
-        safe_write({"name":".swf.name","value":app_name, "hxt":switch_to_nonamf});
+        safe_write({"name":".swf.name","value":app_name, "hxt":switch_to_nonamf,"activity_descriptors":activity_descriptors});
         if (switch_to_nonamf) {
           amf_mode = false;
           writer = null;
@@ -406,6 +446,9 @@ safe_write(gct);
         untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
       } else {
         safe_write(data);
+        if (data.exit) {
+          cleanup();
+        }
       }
     }
     trace("HXTelemetry socket thread exiting");
