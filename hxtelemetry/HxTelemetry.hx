@@ -40,14 +40,9 @@ class Timing {
 
   // Scout compatibility issue - real names
   public static inline var GC:String = ".gc";
-  public static inline var USER:String = ".user";
-  public static inline var RENDER:String = ".render";
 
   public static var DEFAULT_DESCRIPTORS:Array<ActivityDescriptor> = [
-    { name:".gc", description:"Garbage Collection", color:0xdd5522 },
-    { name:".user", description:"User Code", color:0x2288cc },
-    { name:".event_handler", description:"Event Handler", color:0x2288cc },
-    { name:".render", description:"Rendering", color:0x66aa66 },
+    { name:".gc", description:"Garbage Collection", color:0xdd5522 }
   ];
 
   public static inline var FRAME_DELIMITER:String = ".enter";
@@ -75,8 +70,9 @@ class HxTelemetry
     _config = config;
 
     if (_config.activity_descriptors==null) {
-      _config.activity_descriptors = Timing.DEFAULT_DESCRIPTORS;
+      _config.activity_descriptors = [];
     }
+    _config.activity_descriptors = Timing.DEFAULT_DESCRIPTORS.concat(_config.activity_descriptors);
 
 #if cpp
     mutex.acquire();
@@ -176,11 +172,12 @@ class HxTelemetry
 #end
 
     // Special-case frame delimiter
-    end_timing(Timing.FRAME_DELIMITER, true);
+    send_frame_delimiter();
   }
 
   var _last = timestamp_us();
   var _activity_stack:Array<ActivityStackElem> = [];
+  var _hier_name:String = "";
 
   public inline function telemetry_error(err:String):Void
   {
@@ -196,32 +193,76 @@ class HxTelemetry
 
     var t = timestamp_us();
     _activity_stack.push({name:name, t0:t});
+    _hier_name += name;
   }
 
-  public function end_timing(name:String, is_delimiter:Bool=false):Void
+  public function end_timing(name:String):Void
   {
     if (_writer==null) return;
 
 #if cpp
     untyped __global__.__hxcpp_hxt_ignore_allocs(1);
 #end
-    var t = timestamp_us();
-    var data:Dynamic = {"name":name,"delta":Std.int(t-_last)}
-    if (is_delimiter) {
-      _writer.sendMessage(data);
-    } else {
-      var top = _activity_stack.pop();
-      if (top!=null && top.name==name) {
-        data.span = Std.int(t-top.t0);
-        _writer.sendMessage(data);
-      } else {
-        telemetry_error("WARNING: Inconsistent start/end timing, stack expected "+name+" but got "+top);
-      }
-    }
+    var t:Float = timestamp_us();
+    var data:Dynamic = {"name":_hier_name,"delta":Std.int(t-_last)}
+    var top = _activity_stack.pop();
+		if (top!=null && top.name==name) {
+			data.span = Std.int(t-top.t0);
+			_writer.sendMessage(data);
+      _hier_name = _hier_name.substr(0, _hier_name.length-name.length);
+		} else {
+			telemetry_error("WARNING: Inconsistent start/end timing, stack expected "+name+" but got "+top);
+		}
+
     _last = t;
 #if cpp
     untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
 #end
+  }
+
+  private var _restart:Array<String> = [];
+  public function send_frame_delimiter():Void
+  {
+    if (_writer==null) return;
+
+#if cpp
+    untyped __global__.__hxcpp_hxt_ignore_allocs(1);
+#end
+    var t:Float;
+
+    // Stop/restart items still in stack
+		while (_activity_stack.length>0) {
+			var cur = _activity_stack[_activity_stack.length-1].name;
+			_restart.push(cur);
+			end_timing(cur);
+		}
+
+		// Send delimiter
+		t = timestamp_us();
+		var data:Dynamic = {"name":Timing.FRAME_DELIMITER,"delta":Std.int(t-_last)}
+		_writer.sendMessage(data);
+    _last = t;
+
+    // Restart stopped activities
+		while (_restart.length>0) { start_timing(_restart.pop()); }
+#if cpp
+    untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
+#end
+  }
+
+  public function unwind_stack():String
+  {
+    var stack:String = _hier_name;
+    _hier_name = "";
+    return stack;
+  }
+
+  public function rewind_stack(stack:String):Void
+  {
+    if (_hier_name.length>0) {
+      telemetry_error("Cannot rewind stack when not empty!");
+    }
+    _hier_name = stack;
   }
 
 
