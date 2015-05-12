@@ -13,6 +13,11 @@ class Main extends Sprite {
 
 	public static var fps:openfl.display.FPS;
 
+	public static var telemetry_config:Bool = (function():Bool {
+      openfl.Telemetry.config.app_name = "DisplayingABitmap"; // Is this a define?
+    openfl.Telemetry.config.allocations = false;
+		return true;
+  })();
 	
 	public function new () {
 		
