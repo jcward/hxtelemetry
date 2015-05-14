@@ -10,6 +10,11 @@ import haxe.ds.StringMap;
 #end
 //import haxe.CallStack;
 
+enum TelemetryStatus {
+  OK;
+  Closed;
+}
+
 class Config
 {
   public function new() {};
@@ -77,6 +82,7 @@ class HxTelemetry
 #if cpp
     mutex.acquire();
 #end
+
     if (_config.singleton_instance) {
       if (singleton!=null) {
         trace("Cannot have two singletons of HxTelemetry!");
@@ -86,7 +92,7 @@ class HxTelemetry
     }
 
 #if cpp
-    mutex.release();
+      mutex.release();
 #end
 
     _writer = Thread.create(start_writer);
@@ -96,11 +102,8 @@ class HxTelemetry
     _writer.sendMessage(config.app_name);
     _writer.sendMessage(haxe.Serializer.run(config.activity_descriptors));
 
-    if (!Thread.readMessage(true)) {
+    if (Thread.readMessage(true)!=TelemetryStatus.OK) {
       _writer = null;
-#if cpp
-    mutex.release();
-#end
       return;
     }
 
@@ -116,34 +119,26 @@ class HxTelemetry
 
 #if cpp
     if (_config.allocations && !_config.profiler) {
-      mutex.release();
       throw "HxTelemetry config.allocations requires config.profiler";
     }
 
     if (_config.profiler) {
 #if !HXCPP_STACK_TRACE
-      mutex.release();
       throw "Using the HXTelemetry Profiler requires -D HXCPP_STACK_TRACE or in project.xml: <haxedef name=\"HXCPP_STACK_TRACE\" />";
 #end
       _thread_num = untyped __global__.__hxcpp_hxt_start_telemetry(_config.profiler, _config.allocations);
     }
-
-    mutex.release();
 #end
   }
 
-//  function setup_event_loop():Void
-//  {
-//#if openfl_legacy
-//    openfl.Lib.stage.addEventListener("HXT_BEFORE_FRAME", advance_frame);
-//#elseif openfl
-//    openfl.Lib.current.stage.addEventListener("HXT_BEFORE_FRAME", advance_frame);
-//#elseif lime
-//    trace("Does lime have an event loop?");
-//#else
-//    trace("TODO: create separate thread for event loop? e.g. commandline tools");
-//#end
-//  }
+  public function send_data(data:Dynamic):Void
+  {
+    if (_writer==null) return;
+    _writer.sendMessage(data);
+    if (Thread.readMessage(true)!=TelemetryStatus.OK) {
+      _writer = null;
+    }
+  }
 
   public function advance_frame(e=null)
   {
@@ -154,18 +149,18 @@ class HxTelemetry
     if (_config.profiler) {
       untyped __global__.__hxcpp_hxt_stash_telemetry();
     }
-    _writer.sendMessage({"dump":true, "thread_num":_thread_num});
+    send_data({"dump":true, "thread_num":_thread_num});
 
     // TODO: only send if they change, track locally
     // TODO: support other names, reserved, etc
     var gctotal:Int = Std.int((untyped __global__.__hxcpp_gc_reserved_bytes())/1024);
     var gcused:Int = Std.int((untyped __global__.__hxcpp_gc_used_bytes())/1024);
-    _writer.sendMessage({"name":".mem.total","value":gctotal });
-    _writer.sendMessage({"name":".mem.managed.used","value":gcused });
+    send_data({"name":".mem.total","value":gctotal });
+    send_data({"name":".mem.managed.used","value":gcused });
 
     // var gctime:Int = untyped __global__.__hxcpp_hxt_dump_gctime();
     // if (gctime>0) {
-    //   _writer.sendMessage({"name":Timing.GC,"delta":gctime,"span":gctime});
+    //   send_data({"name":Timing.GC,"delta":gctime,"span":gctime});
     // }
 
     untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
@@ -183,8 +178,10 @@ class HxTelemetry
   {
     trace("Telemetry terminating at:");
     trace(haxe.CallStack.toString(haxe.CallStack.callStack()));
-    _writer.sendMessage({"exit":true});
-    _writer = null;
+    if (_writer!=null) {
+      _writer.sendMessage({"exit":true});
+      _writer = null;
+    }
   }
 
   public function start_timing(name:String):Void
@@ -208,7 +205,7 @@ class HxTelemetry
     var top = _activity_stack.pop();
 		if (top!=null && top.name==name) {
 			data.span = Std.int(t-top.t0);
-			_writer.sendMessage(data);
+			send_data(data);
       _hier_name = _hier_name.substr(0, _hier_name.length-name.length);
 		} else {
 			telemetry_error("WARNING: Inconsistent start/end timing, stack expected "+name+" but got "+top);
@@ -240,7 +237,7 @@ class HxTelemetry
 		// Send delimiter
 		t = timestamp_us();
 		var data:Dynamic = {"name":Timing.FRAME_DELIMITER,"delta":Std.int(t-_last)}
-		_writer.sendMessage(data);
+		send_data(data);
     _last = t;
 
     // Restart stopped activities
@@ -400,6 +397,9 @@ safe_write(gct);
     var app_name:String = Thread.readMessage(true);
     var activity_descriptors:String = Thread.readMessage(true);
 
+    var telemetry_thread_num:Int = 0;
+    var telemetry_thread_num_valid:Bool = false;
+
     function cleanup()
     {
       if (socket!=null) {
@@ -454,11 +454,11 @@ safe_write(gct);
     while (true) {
       try_connect();
       if (connected) {
-        hxt_thread.sendMessage(true);
+        hxt_thread.sendMessage(TelemetryStatus.OK);
         break;
       } else if (--retries == 0) {
         trace("HxTelemetry failed to connect to "+host+":"+port);
-        hxt_thread.sendMessage(false);
+        hxt_thread.sendMessage(TelemetryStatus.Closed);
         break;
       } else {
         Sys.sleep(0.1);
@@ -471,18 +471,12 @@ safe_write(gct);
       // TODO: Accept timing data, too
       var data:Dynamic = Thread.readMessage(true);
       if (data.dump) {
-        var thread_num:Int = data.thread_num;
-        //trace("Calling dump telemetry with thread_num: "+thread_num+", socket.output="+socket.output);
-        // TODO: @:function cpp dump telemetry, write to socket?  Read directly from cpp data structure?
+        telemetry_thread_num = data.thread_num;
+        telemetry_thread_num_valid = true;
 
         untyped __global__.__hxcpp_hxt_ignore_allocs(1);
 
-        dump_hxt(thread_num, socket.output, safe_write);
-
-        //untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num, socket.output);
-        //Reflect.setField(frameData, "allocations", null);
-        //Reflect.setField(frameData, "collections", null);
-        //safe_write(frameData);
+        dump_hxt(telemetry_thread_num, socket.output, safe_write);
 
         untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
       } else {
@@ -490,6 +484,14 @@ safe_write(gct);
         if (data.exit) {
           cleanup();
         }
+      }
+
+      // Response
+      if (socket==null) {
+        hxt_thread.sendMessage(TelemetryStatus.Closed);
+        break;
+      } else {
+        hxt_thread.sendMessage(TelemetryStatus.OK);
       }
     }
     trace("HXTelemetry socket thread exiting");
