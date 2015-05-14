@@ -7,15 +7,23 @@ import openfl.display.Sprite;
 import openfl.utils.ByteArray;
 import openfl.Assets;
 
-import hxtelemetry.HxTelemetry.Timing;
+#if (telemetry)
+  import hxtelemetry.HxTelemetry.Timing;
+#end
 
 class Main extends Sprite {
 
 	public static var fps:openfl.display.FPS;
 
 	public static var telemetry_config:Bool = (function():Bool {
-      openfl.Telemetry.config.app_name = "DisplayingABitmap"; // Is this a define?
+#if (cpp && telemetry)
+    openfl.Telemetry.config.app_name = "DisplayingABitmap"; // Is this a define?
     openfl.Telemetry.config.allocations = false;
+  #if android
+    openfl.Telemetry.config.host = "10.0.1.33";
+    openfl.Telemetry.config.app_name = "Android App";
+  #end
+#end
 		return true;
   })();
 	

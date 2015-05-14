@@ -2,9 +2,20 @@
 <project>
 	
 	<meta title="Displaying a Bitmap" package="org.openfl.samples.displayingabitmap" version="1.0.0" company="OpenFL" />
-	<app main="Main" path="Export" file="DisplayingABitmap" />
   <window width="1024" height="768" background="#ffffff" resizable="true" fps="60" hardware="true" vsync="false"  />
-	
+
+	<app main="Main" file="DisplayingABitmap" />
+
+  <app path="export/legacy_debug_telemetry" if="legacy debug telemetry" />
+  <app path="export/legacy_release_telemetry" if="legacy release telemetry" />
+  <app path="export/next_debug_telemetry" if="debug telemetry" unless="legacy" />
+  <app path="export/next_release_telemetry" if="release telemetry" unless="legacy" />
+
+  <app path="export/legacy_debug_notelemetry" if="legacy debug" unless="telemetry"/>
+  <app path="export/legacy_release_notelemetry" if="legacy release" unless="telemetry"/>
+  <app path="export/next_debug_notelemetry" if="debug" unless="legacy || telemetry" />
+  <app path="export/next_release_notelemetry" if="release" unless="legacy || telemetry" />
+
 	<source path="Source" />
 	
 	<haxelib name="openfl" />
@@ -12,9 +23,9 @@
 	<assets path="Assets" rename="assets" exclude="*.svg" />
 	<icon path="Assets/openfl.svg" />
 
-	<haxelib name="hxtelemetry" />
-  <haxedef name="HXCPP_STACK_TRACE" />
-  <haxedef name="HXCPP_TELEMETRY" />
+	<haxelib name="hxtelemetry" if="telemetry"/>
+  <haxedef name="HXCPP_STACK_TRACE"  if="telemetry"/>
+  <haxedef name="HXCPP_TELEMETRY"  if="telemetry"/>
 <!--  <haxedef name="HXCPP_PROFILE_EXTERNS" /> Very expensive -->
 
   <android permission="android.permission.INTERNET" />
