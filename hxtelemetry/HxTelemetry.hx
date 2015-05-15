@@ -156,7 +156,7 @@ class HxTelemetry
     var gctotal:Int = Std.int((untyped __global__.__hxcpp_gc_reserved_bytes())/1024);
     var gcused:Int = Std.int((untyped __global__.__hxcpp_gc_used_bytes())/1024);
     send_data({"name":".mem.total","value":gctotal });
-    send_data({"name":".mem.managed.used","value":gcused });
+    send_data({"name":".mem.used","value":gcused });
 
     // var gctime:Int = untyped __global__.__hxcpp_hxt_dump_gctime();
     // if (gctime>0) {
