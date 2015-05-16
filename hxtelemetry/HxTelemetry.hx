@@ -20,7 +20,6 @@ class Config
   public var profiler:Bool = true;
   public var trace:Bool = true;
   public var allocations:Bool = true;
-  public var singleton_instance:Bool = true;
   public var activity_descriptors:Array<ActivityDescriptor> = null;
 }
 
@@ -51,7 +50,6 @@ class Timing {
 class HxTelemetry
 {
   // Optional: singleton accessors
-  public static var singleton(default,null):HxTelemetry;
   public static var mutex:Mutex = new Mutex();
 
   // Member objects
@@ -73,21 +71,6 @@ class HxTelemetry
       _config.activity_descriptors = [];
     }
     _config.activity_descriptors = Timing.DEFAULT_DESCRIPTORS.concat(_config.activity_descriptors);
-
-#if cpp
-    mutex.acquire();
-#end
-    if (_config.singleton_instance) {
-      if (singleton!=null) {
-        trace("Cannot have two singletons of HxTelemetry!");
-        throw "Cannot have two singletons of HxTelemetry!";
-      }
-      singleton = this;
-    }
-
-#if cpp
-    mutex.release();
-#end
 
     _writer = Thread.create(start_writer);
     _writer.sendMessage(Thread.current());
