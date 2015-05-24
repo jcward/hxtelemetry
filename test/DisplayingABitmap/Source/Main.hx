@@ -18,7 +18,9 @@ class Main extends Sprite {
 	public static var telemetry_config:Bool = (function():Bool {
 #if (cpp && telemetry)
     openfl.Telemetry.config.app_name = "DisplayingABitmap"; // Is this a define?
-    openfl.Telemetry.config.allocations = false;
+    if ((Sys.args().length>0 && Sys.args().indexOf('-a')<0)) {
+        openfl.Telemetry.config.allocations = false;
+    }
   #if android
     openfl.Telemetry.config.host = "10.0.1.33";
     openfl.Telemetry.config.app_name = "Android App";
