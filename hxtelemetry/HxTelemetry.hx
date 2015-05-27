@@ -47,15 +47,21 @@ class Timing {
   public static inline var FRAME_DELIMITER:String = ".enter";
 }
 
+#if debug
+    typedef ThreadExist = Array<haxe.CallStack.StackItem>;
+#else
+    typedef ThreadExist = Bool;
+#end
+
 class HxTelemetry
 {
-  // Optional: singleton accessors
-  public static var mutex:Mutex = new Mutex();
-
   // Member objects
   var _config:Config;
   var _writer:Thread;
+
   var _thread_num:Int;
+  private static var _hxt_threads:haxe.ds.IntMap<ThreadExist> = new haxe.ds.IntMap<ThreadExist>();
+  private static var mutex:Mutex = new Mutex();
 
   // Timing helpers
   static var _abs_t0_usec:Float = Date.now().getTime()*1000;
@@ -81,9 +87,6 @@ class HxTelemetry
 
     if (!Thread.readMessage(true)) {
       _writer = null;
-#if cpp
-    mutex.release();
-#end
       return;
     }
 
@@ -99,19 +102,31 @@ class HxTelemetry
 
 #if cpp
     if (_config.allocations && !_config.profiler) {
-      mutex.release();
       throw "HxTelemetry config.allocations requires config.profiler";
     }
 
     if (_config.profiler) {
 #if !HXCPP_STACK_TRACE
-      mutex.release();
       throw "Using the HXTelemetry Profiler requires -D HXCPP_STACK_TRACE or in project.xml: <haxedef name=\"HXCPP_STACK_TRACE\" />";
 #end
+      mutex.acquire();
       _thread_num = untyped __global__.__hxcpp_hxt_start_telemetry(_config.profiler, _config.allocations);
+      if (_hxt_threads.exists(_thread_num)) {
+        mutex.release();
+#if debug
+        trace("Already instantiated HXTelemetry from this thread, at:"+haxe.CallStack.toString(_hxt_threads.get(_thread_num))+"\n");
+#end
+        throw "Cannot instance more than one HXTelemetry per Thread, triggered at:";
+      }
+#if debug
+      var exist = haxe.CallStack.callStack();
+#else
+      var exist = true;
+#end
+      _hxt_threads.set(_thread_num, exist);
+      mutex.release();
     }
 
-    mutex.release();
 #end
   }
 
