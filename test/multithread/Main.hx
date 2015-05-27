@@ -41,7 +41,6 @@ class Main {
     //cfg.allocations = false;
     var idx:Int = Thread.readMessage(true);
     cfg.app_name = "Thread"+idx;
-    cfg.singleton_instance = false;
     var hxt = new hxtelemetry.HxTelemetry(cfg);
 
     var refs:Array<Rectangle> = [];
