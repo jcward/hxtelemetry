@@ -18,6 +18,18 @@ class Main extends Sprite
 	var skipSplash:Bool = false; // Whether to skip the flixel splash screen that appears in release mode.
 	var startFullscreen:Bool = false; // Whether to start the game in fullscreen on desktop targets
 	
+
+	public static var telemetry_config:Bool = (function():Bool {
+#if (cpp && telemetry)
+    openfl.Telemetry.config.app_name = "HaxeFlixel";
+    //openfl.Telemetry.config.allocations = false;
+  #if android
+    openfl.Telemetry.config.host = "10.0.1.33";
+  #end
+#end
+		return true;
+  })();
+
 	// You can pretty much ignore everything from here on - your code should go in your states.
 	
 	public static function main():Void
