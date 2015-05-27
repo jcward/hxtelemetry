@@ -1,0 +1,27 @@
+{
+
+  project : {
+    name : 'snow basic',
+    version : '1.0.0',
+    author : 'snowkit',
+
+    app : {
+      name : 'snow_basic',
+      package : 'org.snowkit.snowbasic',
+    },
+
+    build : {
+      dependencies : {
+        snow : '*',
+        hxtelemetry : '*'
+      },
+      defines:['HXCPP_STACK_TRACE','HXCPP_TELEMETRY']
+    },
+
+    files : {
+      config : 'config.json'
+    }
+
+  }
+
+}
