@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<extension>
+	
+	<haxedef name="HXCPP_TELEMETRY" if="cpp" />
+	<haxedef name="HXCPP_STACK_TRACE" if="cpp" />
+	
+</extension>
