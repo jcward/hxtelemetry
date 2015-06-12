@@ -3,9 +3,9 @@
 	"url": "http://github.com/jcward/hxtelemetry",
 	"license": "MIT",
 	"tags": ["cpp"],
-	"description": "Haxe Telemetry Generation Library",
-	"version": "0.0.1",
-	"releasenote": "Placeholder only",
+	"description": "Haxe telemetry library for sending profiling data to HxScout",
+	"version": "0.2.0-beta",
+	"releasenote": "Compatible with HxScout 0.2 beta, and hxcpp in git (currently being merged into hxcpp as issue #243).",
 	"contributors": [ "jeff.ward" ],
 	"dependencies": {}
 }
