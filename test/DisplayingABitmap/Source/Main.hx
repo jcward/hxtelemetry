@@ -15,19 +15,19 @@ class Main extends Sprite {
 
 	public static var fps:openfl.display.FPS;
 
-	public static var telemetry_config:Bool = (function():Bool {
-#if (cpp && telemetry)
-    openfl.Telemetry.config.app_name = "DisplayingABitmap"; // Is this a define?
-    if ((Sys.args().length>0 && Sys.args().indexOf('-a')<0)) {
-        openfl.Telemetry.config.allocations = false;
-    }
-  #if android
-    openfl.Telemetry.config.host = "10.0.1.33";
-    openfl.Telemetry.config.app_name = "Android App";
-  #end
-#end
-		return true;
-  })();
+// Configuration still WIP
+//   public static var telemetry_config:Bool = (function():Bool {
+// #if (cpp && telemetry)
+//     if ((Sys.args().length>0 && Sys.args().indexOf('-a')<0)) {
+//     openfl.profiler.Telemetry.config.allocations = false;
+//     }
+//   #if android
+//     openfl.profiler.Telemetry.config.host = "10.0.1.33";
+//   	openfl.profiler.Telemetry.config.app_name = "Android App";
+//   #end
+// #end
+//   	return true;
+//   })();
 	
 	public function new () {
 		
