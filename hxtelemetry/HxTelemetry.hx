@@ -3,6 +3,7 @@ package hxtelemetry;
 import sys.net.Socket;
 import amf.io.Amf3Writer;
 import haxe.ds.StringMap;
+import haxe.io.Bytes;
 
 #if cpp
   import cpp.vm.Thread;
@@ -70,6 +71,9 @@ class HxTelemetry
 
   public function new(config:Config=null)
   {
+    // DCE seems to need this for cpp call to alloc...
+    var b:Bytes = Bytes.alloc(4);
+
     if (config==null) config = new Config();
     _config = config;
 
@@ -107,7 +111,11 @@ class HxTelemetry
 
     if (_config.profiler) {
 #if !HXCPP_STACK_TRACE
-      throw "Using the HXTelemetry Profiler requires -D HXCPP_STACK_TRACE or in project.xml: <haxedef name=\"HXCPP_STACK_TRACE\" />";
+#if openfl
+      throw "Using the HXTelemetry Profiler requires -D HXCPP_STACK_TRACE, add to your project.xml: <haxedef name=\"HXCPP_STACK_TRACE\" />";
+#else
+      throw "Using the HXTelemetry Profiler requires -D HXCPP_STACK_TRACE";
+#end
 #end
       mutex.acquire();
       _thread_num = untyped __global__.__hxcpp_hxt_start_telemetry(_config.profiler, _config.allocations);
@@ -263,7 +271,6 @@ class HxTelemetry
     _hier_name = stack;
   }
 
-
     @:functionCode('
 //printf("Dumping telemetry from thread %d\\n", thread_num);
 TelemetryFrame* frame = __hxcpp_hxt_dump_telemetry(thread_num);
@@ -314,8 +321,8 @@ if (frame->allocation_data!=0) {
     i = 0;
     size = frame->stacks->size();
     while (i<size) {
-      output->writeInt32(frame->stacks->at(i++));
-    }
+			output->writeInt32(frame->stacks->at(i++));
+		}
   }
 
   // Write allocations
@@ -325,9 +332,21 @@ if (frame->allocation_data!=0) {
     output->writeInt32(frame->allocation_data->size());
     i = 0;
     size = frame->allocation_data->size();
-    while (i<size) {
-      output->writeInt32(frame->allocation_data->at(i++));
-    }
+
+    if (size>0) {
+  		::haxe::io::Bytes bytes = ::haxe::io::Bytes_obj::alloc((int)size*4);
+
+      while (i<size) {
+      //  output->writeInt32(frame->allocation_data->at(i++));
+        int d = frame->allocation_data->at(i);
+  			bytes->b[(int)i*4]   = d>>24;
+				bytes->b[(int)i*4+1] = d>>16;
+				bytes->b[(int)i*4+2] = d>>8;
+				bytes->b[(int)i*4+3] = d;
+        i++;
+      }
+      output->writeFullBytes(bytes, 0, size*4);
+		}
   }
 }
 
@@ -347,6 +366,11 @@ safe_write(gct);
       //for (i in 0...arr.length) {
       //  trace(arr[i]);
       //}
+
+      //var b = Bytes.alloc(1024);
+      //b.setInt32(0, 0xaabbccdd);
+      //b.setInt32(4, 0xeeff0011);
+      //output.writeBytes(b, 0, 1024);
 
       // Examples
       //output.writeString("From haxe!");
@@ -468,6 +492,7 @@ safe_write(gct);
     while (true) {
       // TODO: Accept timing data, too
       var data:Dynamic = Thread.readMessage(true);
+
       if (data.dump) {
         var thread_num:Int = data.thread_num;
         //trace("Calling dump telemetry with thread_num: "+thread_num+", socket.output="+socket.output);
@@ -475,8 +500,9 @@ safe_write(gct);
 
         untyped __global__.__hxcpp_hxt_ignore_allocs(1);
 
+        //var ss=Sys.time();
         dump_hxt(thread_num, socket.output, safe_write);
-
+        //trace("Dump took: "+(Sys.time()-ss));
         //untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num, socket.output);
         //Reflect.setField(frameData, "allocations", null);
         //Reflect.setField(frameData, "collections", null);
