@@ -24,11 +24,6 @@ class Config
   public var activity_descriptors:Array<ActivityDescriptor> = null;
 }
 
-typedef ActivityStackElem = {
-  name:String,
-  t0:Float
-}
-
 typedef ActivityDescriptor = {
   name:String,
   description:String,
@@ -182,7 +177,8 @@ class HxTelemetry
   }
 
   var _last = timestamp_us();
-  var _activity_stack:Array<ActivityStackElem> = [];
+  var _activity_stack_name:Array<String> = [];
+  var _activity_stack_time:Array<Float> = [];
   var _hier_name:String = "";
 
   public inline function telemetry_error(err:String):Void
@@ -198,7 +194,8 @@ class HxTelemetry
     if (_writer==null) return;
 
     var t = timestamp_us();
-    _activity_stack.push({name:name, t0:t});
+    _activity_stack_name.push(name);
+    _activity_stack_time.push(t);
     _hier_name += name;
   }
 
@@ -211,9 +208,10 @@ class HxTelemetry
 #end
     var t:Float = timestamp_us();
     var data:Dynamic = {"name":_hier_name,"delta":Std.int(t-_last)}
-    var top = _activity_stack.pop();
-		if (top!=null && top.name==name) {
-			data.span = Std.int(t-top.t0);
+    var top = _activity_stack_name.pop();
+    var t0 = _activity_stack_time.pop();
+		if (top==name) {
+			data.span = Std.int(t-t0);
 			_writer.sendMessage(data);
       _hier_name = _hier_name.substr(0, _hier_name.length-name.length);
 		} else {
@@ -237,8 +235,8 @@ class HxTelemetry
     var t:Float;
 
     // Stop/restart items still in stack
-		while (_activity_stack.length>0) {
-			var cur = _activity_stack[_activity_stack.length-1].name;
+		while (_activity_stack_name.length>0) {
+			var cur = _activity_stack_name[_activity_stack_name.length-1];
 			_restart.push(cur);
 			end_timing(cur);
 		}
