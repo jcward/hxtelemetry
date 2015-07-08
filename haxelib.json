@@ -4,8 +4,8 @@
 	"license": "MIT",
 	"tags": ["cpp"],
 	"description": "Haxe Telemetry Generation Library",
-	"version": "0.0.1",
-	"releasenote": "Placeholder only",
+	"version": "0.2.0-beta",
+	"releasenote": "Telemetry library compatible with hxScout 0.2 beta, jcward hxcpp (and optionally openfl) forks tagged hxt_v0.2_beta",
 	"contributors": [ "jeff.ward" ],
 	"dependencies": {}
 }
