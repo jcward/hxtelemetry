@@ -94,7 +94,7 @@ class HxTelemetry
     if (config.trace) {
       var oldTrace = haxe.Log.trace; // store old function
       haxe.Log.trace = function( v, ?infos ) : Void {
-        if (_writer!=null) _writer.sendMessage({"name":".trace", "value":(infos==null ? '' : infos.fileName + ":" + infos.lineNumber + ": ")+cast(v, String)});
+        if (_writer!=null) _writer.sendMessage({"name":".trace", "value":(infos==null ? '' : infos.fileName + ":" + infos.lineNumber + ": ")+v});
         oldTrace(v,infos);
       }
     }
