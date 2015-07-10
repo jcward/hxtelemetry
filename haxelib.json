@@ -4,8 +4,8 @@
 	"license": "MIT",
 	"tags": ["cpp"],
 	"description": "Haxe telemetry library for sending profiling data to HxScout",
-	"version": "0.2.0-beta",
-	"releasenote": "Compatible with HxScout 0.2 beta, and hxcpp in git (currently being merged into hxcpp as issue #243).",
+	"version": "0.3.0",
+	"releasenote": "Compatible with HxScout 0.3 beta, and hxcpp in git.",
 	"contributors": [ "jeff.ward" ],
 	"dependencies": {}
 }
