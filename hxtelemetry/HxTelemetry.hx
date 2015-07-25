@@ -8,8 +8,14 @@ import haxe.io.Bytes;
 #if cpp
   import cpp.vm.Thread;
   import cpp.vm.Mutex;
+
+  using hxtelemetry.CppHxTelemetry;
+
+#elseif neko
+  import neko.vm.Thread;
+  import neko.vm.Mutex;
+
 #end
-//import haxe.CallStack;
 
 class Config
 {
@@ -31,24 +37,26 @@ typedef ActivityDescriptor = {
 };
 
 class Timing {
-  // Couldn't get an enum to work well wrt scope/access, still needed toString() anyway
-
-  // Scout compatibility issue - real names
+  // Garbage collection is the only cross-platform / cross-framework activity
+  // Frameworks can insert more descriptors
   public static inline var GC:String = ".gc";
-
   public static var DEFAULT_DESCRIPTORS:Array<ActivityDescriptor> = [
-    { name:".gc", description:"Garbage Collection", color:0xdd5522 }
+    { name:GC, description:"Garbage Collection", color:0xdd5522 }
   ];
 
   public static inline var FRAME_DELIMITER:String = ".enter";
 }
 
+// In debug mode, tell us where the existing thread was instantiated from
 #if debug
     typedef ThreadExist = Array<haxe.CallStack.StackItem>;
 #else
     typedef ThreadExist = Bool;
 #end
 
+#if cpp
+  @:allow(hxtelemetry.CppHxTelemetry)
+#end
 class HxTelemetry
 {
   // Member objects
@@ -56,8 +64,9 @@ class HxTelemetry
   var _writer:Thread;
 
   var _thread_num:Int;
-  private static var _hxt_threads:haxe.ds.IntMap<ThreadExist> = new haxe.ds.IntMap<ThreadExist>();
-  private static var mutex:Mutex = new Mutex();
+
+  private static var _threads:haxe.ds.IntMap<ThreadExist> = new haxe.ds.IntMap<ThreadExist>();
+  private static var _mutex:Mutex = new Mutex();
 
   // Timing helpers
   static var _abs_t0_usec:Float = Date.now().getTime()*1000;
@@ -66,9 +75,6 @@ class HxTelemetry
 
   public function new(config:Config=null)
   {
-    // DCE seems to need this for cpp call to alloc...
-    var b:Bytes = Bytes.alloc(4);
-
     if (config==null) config = new Config();
     _config = config;
 
@@ -77,6 +83,7 @@ class HxTelemetry
     }
     _config.activity_descriptors = Timing.DEFAULT_DESCRIPTORS.concat(_config.activity_descriptors);
 
+    trace("Starting writer thread...");
     _writer = Thread.create(start_writer);
     _writer.sendMessage(Thread.current());
     _writer.sendMessage(config.host);
@@ -99,25 +106,23 @@ class HxTelemetry
       }
     }
 
-#if cpp
-    if (_config.allocations && !_config.profiler) {
-      throw "HxTelemetry config.allocations requires config.profiler";
-    }
+    validate_config();
+
+    _thread_num = init_profiler_for_this_thread();
+  }
+
+  // start profiler, mutex guarantees a single profiler per thread
+  private function init_profiler_for_this_thread():Int
+  {
+    var thread_num:Int = -1;
 
     if (_config.profiler) {
-#if !HXCPP_STACK_TRACE
-#if openfl
-      throw "Using the HXTelemetry Profiler requires -D HXCPP_STACK_TRACE, add to your project.xml: <haxedef name=\"HXCPP_STACK_TRACE\" />";
-#else
-      throw "Using the HXTelemetry Profiler requires -D HXCPP_STACK_TRACE";
-#end
-#end
-      mutex.acquire();
-      _thread_num = untyped __global__.__hxcpp_hxt_start_telemetry(_config.profiler, _config.allocations);
-      if (_hxt_threads.exists(_thread_num)) {
-        mutex.release();
+      _mutex.acquire();
+      thread_num = start_profiler();
+      if (_threads.exists(thread_num)) {
+        _mutex.release();
 #if debug
-        trace("Already instantiated HXTelemetry from this thread, at:"+haxe.CallStack.toString(_hxt_threads.get(_thread_num))+"\n");
+        trace("Already instantiated HXTelemetry from this thread, at:"+haxe.CallStack.toString(_threads.get(thread_num))+"\n");
 #end
         throw "Cannot instance more than one HXTelemetry per Thread, triggered at:";
       }
@@ -126,51 +131,22 @@ class HxTelemetry
 #else
       var exist = true;
 #end
-      _hxt_threads.set(_thread_num, exist);
-      mutex.release();
+      _threads.set(thread_num, exist);
+      _mutex.release();
     }
 
-#end
+    return thread_num;
   }
 
-//  function setup_event_loop():Void
-//  {
-//#if openfl_legacy
-//    openfl.Lib.stage.addEventListener("HXT_BEFORE_FRAME", advance_frame);
-//#elseif openfl
-//    openfl.Lib.current.stage.addEventListener("HXT_BEFORE_FRAME", advance_frame);
-//#elseif lime
-//    trace("Does lime have an event loop?");
-//#else
-//    trace("TODO: create separate thread for event loop? e.g. commandline tools");
-//#end
-//  }
+  // Protocol only sends memory values if they've changed
+  var _last_gctotal:Int = -1;
+  var _last_gcused:Int = -1;
 
   public function advance_frame(e=null)
   {
     if (_writer==null) return;
 
-#if cpp
-    untyped __global__.__hxcpp_hxt_ignore_allocs(1);
-    if (_config.profiler) {
-      untyped __global__.__hxcpp_hxt_stash_telemetry();
-    }
-    _writer.sendMessage({"dump":true, "thread_num":_thread_num});
-
-    // TODO: only send if they change, track locally
-    // TODO: support other names, reserved, etc
-    var gctotal:Int = Std.int((untyped __global__.__hxcpp_gc_reserved_bytes())/1024);
-    var gcused:Int = Std.int((untyped __global__.__hxcpp_gc_used_bytes())/1024);
-    _writer.sendMessage({"name":".mem.total","value":gctotal });
-    _writer.sendMessage({"name":".mem.used","value":gcused });
-
-    // var gctime:Int = untyped __global__.__hxcpp_hxt_dump_gctime();
-    // if (gctime>0) {
-    //   _writer.sendMessage({"name":Timing.GC,"delta":gctime,"span":gctime});
-    // }
-
-    untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
-#end
+    do_advance_frame();
 
     // Special-case frame delimiter
     send_frame_delimiter();
@@ -203,9 +179,7 @@ class HxTelemetry
   {
     if (_writer==null) return;
 
-#if cpp
-    untyped __global__.__hxcpp_hxt_ignore_allocs(1);
-#end
+    disable_alloc_tracking(true);
     var t:Float = timestamp_us();
     var data:Dynamic = {"name":_hier_name,"delta":Std.int(t-_last)}
     var top = _activity_stack_name.pop();
@@ -219,9 +193,7 @@ class HxTelemetry
 		}
 
     _last = t;
-#if cpp
-    untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
-#end
+    disable_alloc_tracking(false);
   }
 
   private var _restart:Array<String> = [];
@@ -229,9 +201,7 @@ class HxTelemetry
   {
     if (_writer==null) return;
 
-#if cpp
-    untyped __global__.__hxcpp_hxt_ignore_allocs(1);
-#end
+    disable_alloc_tracking(true);
     var t:Float;
 
     // Stop/restart items still in stack
@@ -249,9 +219,7 @@ class HxTelemetry
 
     // Restart stopped activities
 		while (_restart.length>0) { start_timing(_restart.pop()); }
-#if cpp
-    untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
-#end
+    disable_alloc_tracking(false);
   }
 
   public function unwind_stack():String
@@ -269,152 +237,12 @@ class HxTelemetry
     _hier_name = stack;
   }
 
-    @:functionCode('
-//printf("Dumping telemetry from thread %d\\n", thread_num);
-TelemetryFrame* frame = __hxcpp_hxt_dump_telemetry(thread_num);
-//printf("Num samples %d\\n", frame->samples->size());
-
-// printf("Dumped telemetry, samples=%d, names=%d, allocs=%d, collections=%d\\n",
-//         frame->samples->size(),
-//         frame->names->size(),
-//         frame->allocations->size(),
-//   			frame->collections->size());
-
-int i=0;
-int size;
-if (frame->samples!=0) {
-
-  // Write names
-  if (frame->names->size()>0) {
-    output->writeByte(10);
-    output->writeInt32(frame->names->size());
-    i = 0;
-    size = frame->names->size();
-    while (i<size) {
-      String s = String(frame->names->at(i++));
-      output->writeInt32(s.length);
-      output->writeString(s);
-    }
-  }
-
-  // Write samples
-  if (frame->samples->size()>0) {
-    output->writeByte(11);
-    output->writeInt32(frame->samples->size());
-    i = 0;
-    size = frame->samples->size();
-    while (i<size) {
-      output->writeInt32(frame->samples->at(i++));
-    }
-  }
-
-}
-
-if (frame->allocation_data!=0) {
-
-  // Write stacks
-  if (frame->stacks->size()>0) {
-    output->writeByte(12);
-    output->writeInt32(frame->stacks->size());
-    i = 0;
-    size = frame->stacks->size();
-    while (i<size) {
-			output->writeInt32(frame->stacks->at(i++));
-		}
-  }
-
-  // Write allocations
-  if (frame->allocation_data->size()>0) {
-    // printf(\" -- writing allocs: %d\\n\", frame->allocation_data->size());
-    output->writeByte(13);
-    output->writeInt32(frame->allocation_data->size());
-    i = 0;
-    size = frame->allocation_data->size();
-
-    if (size>0) {
-  		::haxe::io::Bytes bytes = ::haxe::io::Bytes_obj::alloc((int)size*4);
-
-      while (i<size) {
-      //  output->writeInt32(frame->allocation_data->at(i++));
-        int d = frame->allocation_data->at(i);
-  			bytes->b[(int)i*4]   = d>>24;
-				bytes->b[(int)i*4+1] = d>>16;
-				bytes->b[(int)i*4+2] = d>>8;
-				bytes->b[(int)i*4+3] = d;
-        i++;
-      }
-      output->writeFullBytes(bytes, 0, size*4);
-		}
-  }
-}
-
-// GC time
-hx::Anon gct = hx::Anon_obj::Create();
-gct->Add(HX_CSTRING("name") , HX_CSTRING(".gc"),false);
-gct->Add(HX_CSTRING("delta") , (int)frame->gctime,false);
-gct->Add(HX_CSTRING("span") , (int)frame->gctime,false);
-safe_write(gct);
-
-')
-    private static function dump_hxt(thread_num:Int,
-                                     output:haxe.io.Output,
-                                     safe_write:Dynamic->Void) {
-      //safe_write({"name":Timing.GC,"delta":0, "span":0});
-
-      //for (i in 0...arr.length) {
-      //  trace(arr[i]);
-      //}
-
-      //var b = Bytes.alloc(1024);
-      //b.setInt32(0, 0xaabbccdd);
-      //b.setInt32(4, 0xeeff0011);
-      //output.writeBytes(b, 0, 1024);
-
-      // Examples
-      //output.writeString("From haxe!");
-      //output.writeInt32(12);
-      //output.writeByte(45);
-      // var arr:Array<UInt> = new Array<UInt>();
-      // arr.push(2);
-			// arr.push(4);
-      // trace(arr.length);
-      //  
-      // var foo:Dynamic = {};
-      // foo.n = 12;
-      // foo.flt = 1.23;
-      // foo.samples = new Array<Int>();
-      // foo.im = new haxe.ds.IntMap<Dynamic>();
-      // foo.im[12] = { type:"String", stackid:12, size:85, ids:(new Array<Int>()) };
-
-      //untyped __global__.__hxcpp_hxt_ignore_allocs(1);
-      // 
-      //var frameData:Dynamic = untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num);
-      // 
-      //// These are too large, they crash serializer...
-      //Reflect.setField(frameData, "allocations", null);
-      //Reflect.setField(frameData, "collections", null);
-      // 
-      //var b = haxe.io.Bytes.alloc(128);
-      //b.set(0, 10);
-      //b.set(1, 11);
-      // 
-      //var bd = new haxe.io.BytesData();
-      //bd.blit();
-      // 
-      //var msg:String = haxe.Serializer.run(frameData);
-      // 
-      //trace(msg.length);
-      // 
-      //untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
-
-    }
-
   private static function start_writer():Void
   {
     var socket:Socket = null;
     var writer:Amf3Writer;
 
-    var hxt_thread:Thread = Thread.readMessage(true);
+    var main_thread:Thread = Thread.readMessage(true);
     var host:String = Thread.readMessage(true);
     var port:Int = Thread.readMessage(true);
     var app_name:String = Thread.readMessage(true);
@@ -432,7 +260,7 @@ safe_write(gct);
     var switch_to_nonamf = true;
     var amf_mode = true;
 
-    function safe_write(data:Dynamic) {
+    function write_object(data:Dynamic) {
       try {
         if (!amf_mode) {
           var msg:String = haxe.Serializer.run(data);
@@ -448,7 +276,7 @@ safe_write(gct);
     }
 
     // Creating sockets seems to need mutex
-    mutex.acquire();
+    _mutex.acquire();
 
     var connected = false;
     var retries = 3;
@@ -459,12 +287,12 @@ safe_write(gct);
         if (amf_mode) {
           writer = new Amf3Writer(socket.output);
         }
-        safe_write({"name":".swf.name","value":app_name, "hxt":switch_to_nonamf,"activity_descriptors":activity_descriptors});
+        write_object({"name":".swf.name","value":app_name, "hxt":switch_to_nonamf,"activity_descriptors":activity_descriptors});
         if (switch_to_nonamf) {
           amf_mode = false;
           writer = null;
         } else {
-          mutex.release();
+          _mutex.release();
           throw "HXTelemetry no longer supports amf mode!";
         }
         connected = true;
@@ -474,41 +302,29 @@ safe_write(gct);
     while (true) {
       try_connect();
       if (connected) {
-        hxt_thread.sendMessage(true);
+        main_thread.sendMessage(true);
         break;
       } else if (--retries == 0) {
         trace("HxTelemetry failed to connect to "+host+":"+port);
-        hxt_thread.sendMessage(false);
+        main_thread.sendMessage(false);
         break;
       } else {
         Sys.sleep(0.1);
       }
     }
 
-    mutex.release();
+    _mutex.release();
 
     while (true) {
       // TODO: Accept timing data, too
       var data:Dynamic = Thread.readMessage(true);
 
       if (data.dump) {
-        var thread_num:Int = data.thread_num;
-        //trace("Calling dump telemetry with thread_num: "+thread_num+", socket.output="+socket.output);
-        // TODO: @:function cpp dump telemetry, write to socket?  Read directly from cpp data structure?
-
-        untyped __global__.__hxcpp_hxt_ignore_allocs(1);
-
-        //var ss=Sys.time();
-        dump_hxt(thread_num, socket.output, safe_write);
-        //trace("Dump took: "+(Sys.time()-ss));
-        //untyped __global__.__hxcpp_hxt_dump_telemetry(thread_num, socket.output);
-        //Reflect.setField(frameData, "allocations", null);
-        //Reflect.setField(frameData, "collections", null);
-        //safe_write(frameData);
-
-        untyped __global__.__hxcpp_hxt_ignore_allocs(-1);
+        disable_alloc_tracking(true);
+        dump_telemetry_frame(data.thread_num, socket.output, write_object);
+        disable_alloc_tracking(false);
       } else {
-        safe_write(data);
+        write_object(data);
         if (data.exit) {
           cleanup();
         }
@@ -516,4 +332,21 @@ safe_write(gct);
     }
     trace("HXTelemetry socket thread exiting");
   }
+
+  public inline static function disable_alloc_tracking(set_disabled:Bool):Void
+  {
+#if cpp
+    CppHxTelemetry.disable_alloc_tracking(set_disabled);
+#end
+  }
+
+  public inline static function dump_telemetry_frame(thread_num:Int,
+                                                     output:haxe.io.Output,
+                                                     write_object:Dynamic->Void):Void
+  {
+#if cpp
+    CppHxTelemetry.dump_telemetry_frame(thread_num, output, write_object);
+#end
+  }
+
 }
