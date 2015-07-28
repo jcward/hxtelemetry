@@ -14,7 +14,7 @@ import haxe.io.Bytes;
 //                                              output:haxe.io.Output,
 //                                              write_object:Dynamic->Void) {}
 
-class CppHxTelemetry
+class NekoHxTelemetry
 {
 
   public inline static function validate_config(hxt:HxTelemetry):Void

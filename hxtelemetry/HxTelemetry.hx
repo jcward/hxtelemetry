@@ -8,13 +8,11 @@ import haxe.io.Bytes;
 #if cpp
   import cpp.vm.Thread;
   import cpp.vm.Mutex;
-
   using hxtelemetry.CppHxTelemetry;
-
 #elseif neko
   import neko.vm.Thread;
   import neko.vm.Mutex;
-
+  using hxtelemetry.NekoHxTelemetry;
 #end
 
 class Config
@@ -56,6 +54,8 @@ class Timing {
 
 #if cpp
   @:allow(hxtelemetry.CppHxTelemetry)
+#elseif neko
+  @:allow(hxtelemetry.NekoHxTelemetry)
 #end
 class HxTelemetry
 {
