@@ -100,8 +100,16 @@ class HxTelemetry
     // TODO: doesn't support multiple instances?
     if (config.trace) {
       var oldTrace = haxe.Log.trace; // store old function
-      haxe.Log.trace = function( v, ?infos ) : Void {
-        if (_writer!=null) _writer.sendMessage({"name":".trace", "value":(infos==null ? '' : infos.fileName + ":" + infos.lineNumber + ": ")+v});
+      haxe.Log.trace = function( v:Dynamic, ?infos ) : Void {
+        var s:String = Std.string(v);
+
+        // handle "rest parameters" / multi trace args
+        if (infos!=null && infos.customParams!=null) {
+          for( v in infos.customParams )
+            s += "," + v;
+        }
+
+        if (_writer!=null) _writer.sendMessage({"name":".trace", "value":(infos==null ? '' : infos.fileName + ":" + infos.lineNumber + ": ")+s});
         oldTrace(v,infos);
       }
     }
