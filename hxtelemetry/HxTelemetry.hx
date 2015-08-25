@@ -83,7 +83,7 @@ class HxTelemetry
     }
     _config.activity_descriptors = Timing.DEFAULT_DESCRIPTORS.concat(_config.activity_descriptors);
 
-    trace("Starting writer thread...");
+    //trace("Starting writer thread...");
     _writer = Thread.create(start_writer);
     _writer.sendMessage(Thread.current());
     _writer.sendMessage(config.host);
@@ -313,7 +313,7 @@ class HxTelemetry
         main_thread.sendMessage(true);
         break;
       } else if (--retries == 0) {
-        trace("HxTelemetry failed to connect to "+host+":"+port);
+        //trace("HxTelemetry failed to connect to "+host+":"+port);
         main_thread.sendMessage(false);
         break;
       } else {
@@ -323,13 +323,23 @@ class HxTelemetry
 
     _mutex.release();
 
-    while (true) {
+    while (socket!=null) {
       // TODO: Accept timing data, too
       var data:Dynamic = Thread.readMessage(true);
 
       if (data.dump) {
         disable_alloc_tracking(true);
-        dump_telemetry_frame(data.thread_num, socket.output, write_object);
+        try {
+          dump_telemetry_frame(data.thread_num, socket.output, write_object);
+        } catch (e:Dynamic) {
+          // Host most likely disconnected
+          if (Std.string(e).toLowerCase().indexOf("eof")>=0) {
+            cleanup();
+          } else {
+            trace("Rethrowing: "+e);
+            throw e;
+          }
+        }
         disable_alloc_tracking(false);
       } else {
         write_object(data);
@@ -338,7 +348,7 @@ class HxTelemetry
         }
       }
     }
-    trace("HXTelemetry socket thread exiting");
+    //trace("HXTelemetry socket thread exiting");
   }
 
   public inline static function disable_alloc_tracking(set_disabled:Bool):Void
