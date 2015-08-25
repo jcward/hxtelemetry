@@ -90,6 +90,8 @@ TelemetryFrame* frame = __hxcpp_hxt_dump_telemetry(thread_num);
 //         frame->allocations->size(),
 //   			frame->collections->size());
 
+if (frame==0 || output==null()) return null();
+
 int i=0;
 int size;
 if (frame->samples!=0) {

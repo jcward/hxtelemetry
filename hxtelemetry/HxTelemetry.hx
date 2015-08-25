@@ -348,7 +348,17 @@ class HxTelemetry
         }
       }
     }
-    //trace("HXTelemetry socket thread exiting");
+
+    // Disable allocations and drain the stats to prevent a memory leak
+    // (actually destroying the Telemetry instance is tricky, as GC
+    // finalizers can call into it during the destruction...)
+    disable_alloc_tracking(true);
+    while (true) {
+      var data:Dynamic = Thread.readMessage(true);
+      if (data.dump) {
+        dump_telemetry_frame(data.thread_num, null, null);
+      }
+    }
   }
 
   public inline static function disable_alloc_tracking(set_disabled:Bool):Void
