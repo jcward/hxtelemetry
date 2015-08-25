@@ -30,4 +30,6 @@
 
   <android permission="android.permission.INTERNET" />
 
+  <!-- <config:hxtelemetry host="192.168.1.17" allocations="true" /> required openfl ?.? or later? -->
+
 </project>
