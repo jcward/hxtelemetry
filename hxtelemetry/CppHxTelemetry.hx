@@ -94,6 +94,15 @@ if (frame==0 || output==null()) return null();
 
 int i=0;
 int size;
+
+// Buffer for larger of samples/allocs
+::haxe::io::Bytes bytes;
+if (frame->samples!=0) { size = frame->samples->size(); }
+if (frame->allocation_data!=0) {
+  if (size<frame->allocation_data->size()) size = frame->allocation_data->size();
+}
+bytes = ::haxe::io::Bytes_obj::alloc((int)size*4);
+
 if (frame->samples!=0) {
 
   // Write names
@@ -116,8 +125,15 @@ if (frame->samples!=0) {
     i = 0;
     size = frame->samples->size();
     while (i<size) {
-      output->writeInt32(frame->samples->at(i++));
-    }
+      //output->writeInt32(frame->samples->at(i++));
+			int d = frame->samples->at(i);
+			bytes->b[(int)i*4]	 = d>>24;
+			bytes->b[(int)i*4+1] = d>>16;
+			bytes->b[(int)i*4+2] = d>>8;
+			bytes->b[(int)i*4+3] = d;
+			i++;
+		}
+		output->writeFullBytes(bytes, 0, size*4);
   }
 
 }
@@ -144,8 +160,6 @@ if (frame->allocation_data!=0) {
     size = frame->allocation_data->size();
 
     if (size>0) {
-  		::haxe::io::Bytes bytes = ::haxe::io::Bytes_obj::alloc((int)size*4);
-
       while (i<size) {
       //  output->writeInt32(frame->allocation_data->at(i++));
         int d = frame->allocation_data->at(i);
