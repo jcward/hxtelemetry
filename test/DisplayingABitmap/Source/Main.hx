@@ -120,6 +120,11 @@ class Main extends Sprite {
         function new_bmp() {
           //var bmp = new Bitmap(Assets.getBitmapData ("assets/openfl.png"));
           var bmp = new openfl.display.Shape();
+
+          bmp.addEventListener(openfl.events.Event.ADDED_TO_STAGE, function(e) {
+            trace("Added: "+bmp);
+          });
+
           bmp.graphics.beginFill(Std.random(0xffffff));
           bmp.graphics.drawRoundRect(-20, -10, 40, 20, 7);
           bmp.x = Std.random(stage.stageWidth);
@@ -133,6 +138,7 @@ class Main extends Sprite {
           if (dx<0) dx -= 0.6; else dx += 0.6;
 					if (dy<0) dy -= 0.6; else dy += 0.6;
           function anim(e) {
+            //for (i in 0...10) bmp.name = dx+","+i;
             bmp.x += dx;
             bmp.y += dy;
             bmp.rotation += dr;
@@ -146,6 +152,9 @@ class Main extends Sprite {
         }
         for (i in 0...2) new_bmp();
         stage.addChild(Main.fps);
+
+        //if (frame%20==15) TestTimeWaster.foo_b();
+        //if (frame%20==7) TestTimeWaster.foo_a();
 
 				//if (frame%20==5) {
         //  var b:ByteArray = new ByteArray();
@@ -179,6 +188,10 @@ class Util
   static var __t0:Float = haxe.Timer.stamp();
   public static function getTimer():Float {
     return (haxe.Timer.stamp()-__t0)*1000;
+  }
+  public static function sleepFor(t:Float):Void
+  {
+    Sys.sleep(t);
   }
 }
 
