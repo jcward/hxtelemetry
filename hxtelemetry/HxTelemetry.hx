@@ -8,11 +8,17 @@ import haxe.io.Bytes;
 #if cpp
   import cpp.vm.Thread;
   import cpp.vm.Mutex;
-  using hxtelemetry.CppHxTelemetry;
 #elseif neko
   import neko.vm.Thread;
   import neko.vm.Mutex;
+#end
+
+#if (cpp && HXCPP_TELEMETRY)
+  using hxtelemetry.CppHxTelemetry;
+#elseif neko
   using hxtelemetry.NekoHxTelemetry;
+#else
+  using hxtelemetry.NoopHxTelemetry;
 #end
 
 class Config
@@ -52,10 +58,12 @@ class Timing {
     typedef ThreadExist = Bool;
 #end
 
-#if cpp
+#if (cpp && HXCPP_TELEMETRY)
   @:allow(hxtelemetry.CppHxTelemetry)
 #elseif neko
   @:allow(hxtelemetry.NekoHxTelemetry)
+#else
+  @:allow(hxtelemetry.NoopHxTelemetry)
 #end
 class HxTelemetry
 {
@@ -363,7 +371,7 @@ class HxTelemetry
 
   public inline static function disable_alloc_tracking(set_disabled:Bool):Void
   {
-#if cpp
+#if (cpp && HXCPP_TELEMETRY)
     CppHxTelemetry.disable_alloc_tracking(set_disabled);
 #end
   }
@@ -372,7 +380,7 @@ class HxTelemetry
                                                      output:haxe.io.Output,
                                                      write_object:Dynamic->Void):Void
   {
-#if cpp
+#if (cpp && HXCPP_TELEMETRY)
     CppHxTelemetry.dump_telemetry_frame(thread_num, output, write_object);
 #end
   }

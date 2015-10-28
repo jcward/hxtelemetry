@@ -1,6 +1,6 @@
 package hxtelemetry;
 
-#if cpp
+#if (cpp && HXCPP_TELEMETRY)
 
 import haxe.io.Bytes;
 
