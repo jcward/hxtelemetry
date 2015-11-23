@@ -13,7 +13,7 @@ import haxe.io.Bytes;
 //  public static function dump_telemetry_frame(thread_num:Int,
 //                                              output:haxe.io.Output,
 //                                              write_object:Dynamic->Void) {}
-
+@:keep
 class CppHxTelemetry
 {
 
