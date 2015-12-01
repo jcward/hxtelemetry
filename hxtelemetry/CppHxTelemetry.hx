@@ -182,6 +182,7 @@ gct->Add(HX_CSTRING("span") , (int)frame->gctime,false);
 write_object(gct);
 
 ')
+
   public static function dump_telemetry_frame(thread_num:Int,
                                               output:haxe.io.Output,
                                               write_object:Dynamic->Void) {}
@@ -190,6 +191,9 @@ write_object(gct);
   {
     // DCE? seems to need this for the cpp code above...
     var b:Bytes = Bytes.alloc(4);
+    // Tried various forms of:
+    // @:cppFileCode('#include <haxe/io/Bytes.h>')
+    // With no luck
   }
 }
 
