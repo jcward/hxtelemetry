@@ -27,9 +27,9 @@ class Main {
     var frame:Int = 0;
 
     var t0 = Sys.time();
-    while (Sys.time()-t0 < 40) {
+    while (Sys.time()-t0 < 10) {
       frame++;
-      for (i in 0...1000) {
+      for (i in 0...200) {
         var key = "foo"+i;
         refs.push({key:i});
         //refs.push(new Rectangle(Std.random(1000)/1000,
@@ -55,6 +55,15 @@ class Main {
     trace("Exit ("+(frame/(Sys.time()-t0))+" fps avg)- waiting a few seconds just in case HXTelemetry socket needs to drain...");
 
     Sys.sleep(2);
+    refs = null;
+    cpp.vm.Gc.run(true);
+    hxt.advance_frame(); // Somehow time is measured as 1000x faster
+
+    Sys.sleep(1);
+    hxt.advance_frame(); // Somehow time is measured as 1000x faster
+    Sys.sleep(1);
+    hxt.advance_frame(); // Somehow time is measured as 1000x faster
+
     trace("Goodbye");
   }
 }

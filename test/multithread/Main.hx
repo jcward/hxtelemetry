@@ -27,9 +27,16 @@ class Main {
     trace("Starting threads...");
     var t1 = Thread.create(start);
     t1.sendMessage(1);
+    Sys.sleep(1);
     var t2 = Thread.create(start);
     t2.sendMessage(2);
-    Sys.sleep(3);
+    Sys.sleep(1);
+    var t3 = Thread.create(start);
+    t3.sendMessage(3);
+    Sys.sleep(1);
+    var t4 = Thread.create(start);
+    t4.sendMessage(4);
+    Sys.sleep(20);
     t1.sendMessage(true);
     t2.sendMessage(true);
     Sys.sleep(0.5);
@@ -43,33 +50,35 @@ class Main {
     cfg.app_name = "Thread"+idx;
     var hxt = new hxtelemetry.HxTelemetry(cfg);
 
-    var refs:Array<Rectangle> = [];
+    var refs:Array<Dynamic> = [];
 
     // Work on each frame
     var frame:Int = 0;
 
+    function foo():Dynamic {
+      if (Std.random(1000)<500) {
+        return new Rectangle(Std.random(1000)/1000,
+                             Std.random(1000)/1000,
+                             Std.random(1000)/1000,
+                             Std.random(1000)/1000);
+      } else {
+        return "StringOf"+frame;
+      }
+    }
+
     var t0 = Sys.time();
     while (!(Thread.readMessage(false)==true)) {
       frame++;
-      for (i in 0...1000) {
-        //refs.push(i);
-        if (idx==1) {
-          refs.push(new Rectangle(Std.random(1000)/1000,
-                                  Std.random(1000)/1000,
-                                  Std.random(1000)/1000,
-                                  Std.random(1000)/1000));
-        } else {
-          refs.push(new Square(Std.random(1000)/1000,
-                               Std.random(1000)/1000,
-                               Std.random(1000)/1000));
-        }
+      for (i in 0...5000) {
+        refs.push("step:"+i);
+        refs.push(foo());
       }
       if (frame%30==0) {
         refs = [];
         trace(cfg.app_name+": at frame "+frame+", t="+Sys.time());
       }
       hxt.advance_frame();
-      Sys.sleep(0.016);
+      Sys.sleep(0.006);
     }
     trace("Exit "+cfg.app_name+" ("+(frame/(Sys.time()-t0))+" fps avg)- waiting a few seconds just in case HXTelemetry socket needs to drain...");
   }
