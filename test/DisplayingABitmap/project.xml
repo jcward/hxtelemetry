@@ -27,6 +27,7 @@
   <haxedef name="HXCPP_STACK_TRACE"  if="telemetry"/>
   <haxedef name="HXCPP_TELEMETRY"  if="telemetry"/>
 <!--  <haxedef name="HXCPP_PROFILE_EXTERNS" /> Very expensive -->
+<!--  <haxedef name="HXCPP_M32"/> cross compiler testing -->
 
   <android permission="android.permission.INTERNET" />
 

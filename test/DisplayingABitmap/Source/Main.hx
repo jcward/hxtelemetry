@@ -7,6 +7,9 @@ import openfl.display.Sprite;
 import openfl.utils.ByteArray;
 import openfl.Assets;
 
+import openfl.net.*;
+import openfl.events.*;
+
 #if (telemetry)
   import hxtelemetry.HxTelemetry.Timing;
 #end
@@ -115,14 +118,19 @@ class Main extends Sprite {
 		stage.addEventListener(openfl.events.Event.ENTER_FRAME, function(e) {
 				frame++;
 
-        if (frame%10==0) trace("At frame: "+frame);
+        if (frame%10==0) {
+          trace("At frame: "+frame);
+        }
+        //if (frame%2==0) {
+        //  do_load();
+        //}
 
         function new_bmp() {
           //var bmp = new Bitmap(Assets.getBitmapData ("assets/openfl.png"));
           var bmp = new openfl.display.Shape();
 
           bmp.addEventListener(openfl.events.Event.ADDED_TO_STAGE, function(e) {
-            trace("Added: "+bmp);
+              //trace("Added: "+bmp);
           });
 
           bmp.graphics.beginFill(Std.random(0xffffff));
@@ -181,6 +189,24 @@ class Main extends Sprite {
         //}
 		});
 	}
+
+  // Main.hx:122: At frame: 240
+  // *** Error in `./DisplayingABitmap': malloc(): smallbin double linked list corrupted: 0x0000000004093d80 ***
+  // Aborted (core dumped)
+
+  static function do_load()
+  {
+    var urlloader:URLLoader = new URLLoader();
+    urlloader.addEventListener(Event.COMPLETE, function (e:Event):Void 
+      {
+        var strs = [];
+        var urlloader:URLLoader = cast e.target;
+        var bytes = haxe.io.Bytes.ofString(cast urlloader.data);
+        trace("Loaded bytes: "+bytes.length);
+        for (i in 0...1000) strs.push(i+"asdfasdfasdfasdf");
+      });
+    urlloader.load(new URLRequest("http://127.0.0.1/openfl.svg"));
+  }
 }
 
 class Util
