@@ -23,6 +23,8 @@
 	<assets path="Assets" rename="assets" exclude="*.svg" />
 	<icon path="Assets/openfl.svg" />
 
+	<haxelib name="debugger" if="debug"/>
+
 	<haxelib name="hxtelemetry" if="telemetry"/>
   <haxedef name="HXCPP_STACK_TRACE"  if="telemetry"/>
   <haxedef name="HXCPP_TELEMETRY"  if="telemetry"/>

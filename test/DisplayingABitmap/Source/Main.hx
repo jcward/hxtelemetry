@@ -10,6 +10,8 @@ import openfl.Assets;
 import openfl.net.*;
 import openfl.events.*;
 
+import debugger.*;
+
 #if (telemetry)
   import hxtelemetry.HxTelemetry.Timing;
 #end
@@ -35,6 +37,7 @@ class Main extends Sprite {
 	public function new () {
 		
 		super ();
+    //new debugger.Local(true);
 
     //  trace("Starting telemetry...");
     //  var cfg = new hxtelemetry.HxTelemetry.Config();
