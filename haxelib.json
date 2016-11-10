@@ -4,7 +4,7 @@
 	"license": "MIT",
 	"tags": ["cpp"],
 	"description": "Haxe telemetry library for sending profiling data to HxScout",
-	"version": "0.3.3",
+	"version": "0.3.5",
 	"releasenote": "See recently closed issues in github.",
 	"contributors": [ "jeff.ward" ],
 	"dependencies": {}
