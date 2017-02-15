@@ -21,7 +21,7 @@ class Main {
     //cfg.allocations = false;
     var hxt = new hxtelemetry.HxTelemetry(cfg);
 
-    var refs:Array<Int> = [];
+    var refs:Array<Dynamic> = [];
 
     // Work on each frame
     var frame:Int = 0;
@@ -29,17 +29,17 @@ class Main {
     var t0 = Sys.time();
     while (Sys.time()-t0 < 40) {
       frame++;
-      for (i in 0...400) {
+      for (i in 0...4000) {
         refs.push(i);
-        //refs.push(new Rectangle(Std.random(1000)/1000,
-        //                        Std.random(1000)/1000,
-        //                        Std.random(1000)/1000,
-        //                        Std.random(1000)/1000));
+        refs.push(new Rectangle(Std.random(1000)/1000,
+                                Std.random(1000)/1000,
+                                Std.random(1000)/1000,
+                                Std.random(1000)/1000));
       }
-      //if (frame%10==0) {
-      //  refs = [];
-      //  trace(" at frame "+frame+", t="+Sys.time());
-      //}
+      if (frame%10==0) {
+        refs = [];
+        trace(" at frame "+frame+", t="+Sys.time());
+      }
       hxt.advance_frame(); // Somehow time is measured as 1000x faster
       var a = 0;
       //for (i in 0...30000000) { if (refs.length>i) refs[i] = null; }
