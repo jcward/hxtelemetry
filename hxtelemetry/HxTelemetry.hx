@@ -11,12 +11,17 @@ import haxe.io.Bytes;
 #elseif neko
   import neko.vm.Thread;
   import neko.vm.Mutex;
+#elseif hl
+  import hl.vm.Thread;
+  import hl.vm.Mutex;
 #end
 
 #if (cpp && HXCPP_TELEMETRY)
   using hxtelemetry.CppHxTelemetry;
 #elseif neko
   using hxtelemetry.NekoHxTelemetry;
+#elseif hl
+  using hxtelemetry.HLHxTelemetry;
 #else
   using hxtelemetry.NoopHxTelemetry;
 #end
@@ -62,6 +67,8 @@ class Timing {
   @:allow(hxtelemetry.CppHxTelemetry)
 #elseif neko
   @:allow(hxtelemetry.NekoHxTelemetry)
+#elseif hl
+  @:allow(hxtelemetry.HLHxTelemetry)
 #else
   @:allow(hxtelemetry.NoopHxTelemetry)
 #end
@@ -339,18 +346,14 @@ class HxTelemetry
         disable_alloc_tracking(true);
         try {
           dump_telemetry_frame(data.thread_num, socket.output, write_object);
-        } catch (e:Dynamic) {
-          // Host most likely disconnected
-          if (Std.string(e).toLowerCase().indexOf("eof")>=0) {
-            cleanup();
-          } else {
-            trace("Rethrowing: "+e);
-            throw e;
-          }
+        } catch (e:haxe.io.Eof) {
+          cleanup();
         }
         disable_alloc_tracking(false);
       } else {
+        #if hl disable_alloc_tracking(true); #end
         write_object(data);
+        #if hl disable_alloc_tracking(false); #end
         if (data.exit) {
           cleanup();
         }
@@ -374,6 +377,9 @@ class HxTelemetry
 #if (cpp && HXCPP_TELEMETRY)
     CppHxTelemetry.disable_alloc_tracking(set_disabled);
 #end
+#if hl
+    HLHxTelemetry.disable_alloc_tracking(set_disabled);
+#end
   }
 
   public inline static function dump_telemetry_frame(thread_num:Int,
@@ -382,6 +388,9 @@ class HxTelemetry
   {
 #if (cpp && HXCPP_TELEMETRY)
     CppHxTelemetry.dump_telemetry_frame(thread_num, output, write_object);
+#end
+#if hl
+    HLHxTelemetry.dump_telemetry_frame(thread_num, output, write_object);
 #end
   }
 
