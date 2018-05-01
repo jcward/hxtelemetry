@@ -96,10 +96,10 @@ class HLHxTelemetry {
 	}
 
 	public static function dump_telemetry_frame(thread_num:Int,output:haxe.io.Output,write_object:Dynamic->Void) {
-		
+
 		if( output == null )
 			return;
-		
+
 		var maxDepth = 0;
 		hl.Profile.track_lock(true);
 		var count = hl.Profile.track_count(maxDepth);
@@ -115,7 +115,10 @@ class HLHxTelemetry {
 				var tid = getTypeNameIdx(t);
 				var sid = getStackIdx(arr);
 				if( ALLOC_DATA.length < (w + count * 5) * 4 ) {
-					var newData = haxe.io.Bytes.alloc(ALLOC_DATA.length * 2);
+					var newLen = ALLOC_DATA.length * 2;
+					while( newLen < (w+count*5)*4 )
+						newLen *= 2;
+					var newData = haxe.io.Bytes.alloc(newLen);
 					newData.blit(0, ALLOC_DATA, 0, w * 4);
 					ALLOC_DATA = newData;
 					allocData = ALLOC_DATA;
@@ -161,7 +164,7 @@ class HLHxTelemetry {
 			output.writeInt32(w);
 			var allocData : hl.BytesAccess<Int> = ALLOC_DATA;
 			for( i in 0...w ) {
-				var d = allocData.get(i);				
+				var d = allocData.get(i);
 				output.writeByte(d>>>24);
 				output.writeByte((d>>16)&0xFF);
 				output.writeByte((d>>8)&0xFF);
