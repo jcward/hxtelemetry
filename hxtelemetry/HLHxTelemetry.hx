@@ -2,7 +2,7 @@ package hxtelemetry;
 
 #if hl
 
-typedef StackItem = { id : Int, subs : Array<StackItem> };
+typedef StackItem = { id : Int, subs : Map<Int,StackItem> };
 
 @:keep
 @:access(hl.Profile)
@@ -41,7 +41,7 @@ class HLHxTelemetry {
 	static var NAMES = new Map<String,Int>();
 	static var NAME_ID = 1;
 	static var OBJ_ID = 1;
-	static var STACKS : StackItem = { id : 0, subs : [] };
+	static var STACKS : StackItem = { id : 0, subs : new Map() };
 	static var pendingStacks : Array<Array<Int>> = [];
 	static var pendingNames : Array<String> = [];
 	static var STACK_ID = 1;
@@ -83,7 +83,7 @@ class HLHxTelemetry {
 			var sid = getSymbolIdx(arr[i]);
 			var next = root.subs[sid];
 			if( next == null ) {
-				next = { id : -1, subs : [] };
+				next = { id : -1, subs : new Map() };
 				root.subs[sid] = next;
 			}
 			root = next;
