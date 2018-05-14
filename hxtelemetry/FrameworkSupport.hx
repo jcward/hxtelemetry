@@ -16,9 +16,9 @@ class FrameworkSupport
   public static function auto(cfg:hxtelemetry.HxTelemetry.Config)
   {
     #if (openfl && !nme)
-      // TODO: copy from cfg
-      openfl.profiler.Telemetry.config.app_name = "OpenFL App";
-			openfl.profiler.Telemetry.config.allocations = true;
+      // TODO: investigate which versions of OpenFL used:
+      // openfl.profiler.Telemetry.config.app_name = "OpenFL App";
+			// openfl.profiler.Telemetry.config.allocations = true;
     #elseif nme
       NME.augment(cfg);
     #else
