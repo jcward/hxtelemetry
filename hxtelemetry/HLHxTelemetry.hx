@@ -39,12 +39,12 @@ class HLHxTelemetry {
 	static var TYPES = new hl.types.ObjectMap();
 	static var SYMBOLS = new hl.types.ObjectMap();
 	static var NAMES = new Map<String,Int>();
-	static var NAME_ID = 1;
-	static var OBJ_ID = 1;
+	static var NAME_ID = 1; // 1-indexed
+	static var OBJ_ID = 1;  // Doesn't matter... I think ;)
 	static var STACKS : StackItem = { id : 0, subs : new Map() };
 	static var pendingStacks : Array<Array<Int>> = [];
 	static var pendingNames : Array<String> = [];
-	static var STACK_ID = 1;
+	static var STACK_ID = 0; // 0-indexed
 	static var ALLOC_DATA = haxe.io.Bytes.alloc(1024);
 
 	static function getTypeNameIdx( t : hl.Type ) {
