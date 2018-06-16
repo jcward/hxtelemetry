@@ -129,7 +129,7 @@ class HxTelemetry
       }
     }
 
-    validate_config();
+    this.validate_config();
 
     _thread_num = init_profiler_for_this_thread();
   }
@@ -141,7 +141,7 @@ class HxTelemetry
 
     if (_config.profiler) {
       _mutex.acquire();
-      thread_num = start_profiler();
+      thread_num = this.start_profiler();
       if (_threads.exists(thread_num)) {
         _mutex.release();
 #if debug
@@ -169,7 +169,7 @@ class HxTelemetry
   {
     if (_writer==null) return;
 
-    do_advance_frame();
+    this.do_advance_frame();
 
     // Special-case frame delimiter
     send_frame_delimiter();
