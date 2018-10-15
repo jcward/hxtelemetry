@@ -114,7 +114,11 @@ if (!(frame==0 || output==null())) {
       while (i<size) {
         String s = String(frame->names->at(i++));
         output->writeInt32(s.length);
+        #if (HXCPP_API_LEVEL>=400)
+        output->writeString(s, null());
+        #else
         output->writeString(s);
+        #endif
       }
     }
 
