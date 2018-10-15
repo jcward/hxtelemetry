@@ -17,13 +17,13 @@ import haxe.io.Bytes;
 #end
 
 #if (cpp && HXCPP_TELEMETRY)
-  using hxtelemetry.CppHxTelemetry;
+  import hxtelemetry.CppHxTelemetry.*;
 #elseif neko
-  using hxtelemetry.NekoHxTelemetry;
+  import hxtelemetry.NekoHxTelemetry.*;
 #elseif hl
-  using hxtelemetry.HLHxTelemetry;
+  import hxtelemetry.HLHxTelemetry.*;
 #else
-  using hxtelemetry.NoopHxTelemetry;
+  import hxtelemetry.NoopHxTelemetry.*;
 #end
 
 class Config
@@ -129,7 +129,7 @@ class HxTelemetry
       }
     }
 
-    validate_config();
+    validate_config(this);
 
     _thread_num = init_profiler_for_this_thread();
   }
@@ -141,7 +141,7 @@ class HxTelemetry
 
     if (_config.profiler) {
       _mutex.acquire();
-      thread_num = start_profiler();
+      thread_num = start_profiler(this);
       if (_threads.exists(thread_num)) {
         _mutex.release();
 #if debug
@@ -169,7 +169,7 @@ class HxTelemetry
   {
     if (_writer==null) return;
 
-    do_advance_frame();
+    do_advance_frame(this);
 
     // Special-case frame delimiter
     send_frame_delimiter();
