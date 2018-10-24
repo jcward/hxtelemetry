@@ -10,19 +10,9 @@ language: shell
 before_install:
   - |
     env | sort
-    if [ "$TRAVIS_OS_NAME" = 'linux' ]; then
-      curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-      sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-      sudo apt-get update
-      sudo apt-get -y install docker-ce
-      export DOCKER_ROOT=ubuntu:14.04
-      export REPO_MNT=/repo
-      export VOLUMES="-v C:\\Users\\travis\\build\\jcward\\hxtelemetry:C:\\repo"
-    else
-      export DOCKER_ROOT=microsoft/windowsservercore:1803
-      export REPO_MNT=/c/repo
-      export VOLUMES="-v \"`pwd`:C:\\repo\""
-    fi
+    export DOCKER_ROOT=microsoft/windowsservercore:1803
+    export REPO_MNT=/c/repo
+    export VOLUMES="-v \".:C:\\repo\""
 
 # Perform docker image setup, which sets up the environments
 install:
