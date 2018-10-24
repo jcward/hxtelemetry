@@ -21,7 +21,7 @@ before_install:
     else
       export DOCKER_ROOT=microsoft/windowsservercore:1803
       export REPO_MNT=/c/repo
-      export VOLUMES="-v \"$TRAVIS_BUILD_DIR:C:\\repo\""
+      export VOLUMES="-v \"`pwd`:C:\\repo\""
     fi
 
 # Perform docker image setup, which sets up the environments
