@@ -1,0 +1,6 @@
+# Install neko 2.1.0 into /opt/
+cd /opt/
+curl -sL http://nekovm.org/media/neko-2.1.0-linux64.tar.gz | tar -xz
+save_export NEKOPATH=/opt/neko-2.1.0-linux64/
+save_export PATH=/opt/neko-2.1.0-linux64/:\$PATH
+save_export LD_LIBRARY_PATH=/opt/neko-2.1.0-linux64/:\$LD_LIBRARY_PATH

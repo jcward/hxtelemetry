@@ -7,7 +7,13 @@ information, callstack samples, and object allocation and garbage collection dat
 
 See [hxscout.com](http://hxscout.com) for more details.
 
-Compatibility
-=============
+CI / Compatibility
+==================
 
-Tested test/waste_alloc, 2/14/2017: Linux, hxcpp 3.2.193, Haxe 3.2.1, hxtelelemtry (0.3.5 / 0a3a9c5), hxScout 0.5.1
+<img src="https://travis-ci.com/jcward/hxtelemetry.svg?branch=master">
+
+The CI tests the following configurations on linux64:
+
+- Haxe 3.2.1 /w hxcpp 3.2.193
+- Haxe 3.4.7 /w hxcpp 3.4.220
+- Haxe 4.0.0-preview.5 /w hxcpp 4.0.7
