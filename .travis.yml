@@ -4,6 +4,8 @@ os:
   - linux
   - windows
 
+language: shell
+
 before_install:
   - |
     env | sort
