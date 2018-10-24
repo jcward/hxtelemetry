@@ -12,7 +12,7 @@ before_install:
     env | sort
     export DOCKER_ROOT=microsoft/windowsservercore:1803
     export REPO_MNT=/c/repo
-    export VOLUMES="-v \".:C:\\repo\""
+    export VOLUMES="-v \"c:\\Users\\travis\\build\\jcward\\hxtelemetry:C:\\repo\""
 
 # Perform docker image setup, which sets up the environments
 install:
