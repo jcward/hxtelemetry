@@ -16,12 +16,11 @@ before_install:
       sudo apt-get update
       sudo apt-get -y install docker-ce
       export DOCKER_ROOT=ubuntu:14.04
+      export REPO_MNT=/repo
     else
       export DOCKER_ROOT=microsoft/windowsservercore:1803
+      export REPO_MNT=/c/repo
     fi
-
-  # Repo mount location inside docker
-  - export REPO_MNT=/repo
 
 # Perform docker image setup, which sets up the environments
 install:
