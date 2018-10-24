@@ -19,7 +19,7 @@ before_install:
       export REPO_MNT=/repo
     else
       export DOCKER_ROOT=microsoft/windowsservercore:1803
-      export REPO_MNT=/c/repo
+      export REPO_MNT=/c/Users/travis/build/jcward/hxtelemetry
     fi
 
 # Perform docker image setup, which sets up the environments
