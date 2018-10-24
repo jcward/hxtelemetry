@@ -19,24 +19,24 @@ install:
 
     # Neko 2.1.0 base image
     docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" ubuntu:14.04 /bin/bash -c "cd $REPO_MNT; source ci/init_env.source; source ci/setup.neko.source"
-    (docker commit `docker ps -lq` | cut -c8-) > ~/.docker.image.0
+    (docker commit `docker ps -lq` | cut -c8-) > ~/.docker.image.neko
 
     # Build the rest off of that...
 
     # Haxe 3.2.1, hxcpp 3.2.193
-    docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.0` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-3.2.1.source; $REPO_MNT/ci/setup.hxcpp.sh 3.2.193"
-    (docker commit `docker ps -lq` | cut -c8-) > ~/.docker.image.1
+    docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-3.2.1.source; $REPO_MNT/ci/setup.hxcpp.sh 3.2.193"
+    (docker commit `docker ps -lq` | cut -c8-) > ~/.docker.image__3.2.1__3.2.193
 
     # Haxe 3.4.7, hxcpp 3.4.220
-    docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.0` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-3.4.7.source; $REPO_MNT/ci/setup.hxcpp.sh 3.4.220"
-    (docker commit `docker ps -lq` | cut -c8-) > ~/.docker.image.2
+    docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-3.4.7.source; $REPO_MNT/ci/setup.hxcpp.sh 3.4.220"
+    (docker commit `docker ps -lq` | cut -c8-) > ~/.docker.image__3.4.7__3.4.220
 
     # Haxe 4.0.0-preview5, hxcpp 4.0.7
-    docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.0` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-4.0.0-p5.source; $REPO_MNT/ci/setup.hxcpp.sh 4.0.7"
-    (docker commit `docker ps -lq` | cut -c8-) > ~/.docker.image.3
+    docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-4.0.0-p5.source; $REPO_MNT/ci/setup.hxcpp.sh 4.0.7"
+    (docker commit `docker ps -lq` | cut -c8-) > ~/.docker.image__4.0.0p5__4.0.7
 
 # Invoke the above container states and launch tests in each:
 script:
-  - docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.1` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
-  - docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.2` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
-  - docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.3` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
+  - docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image__3.2.1__3.2.193` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
+  - docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image__3.4.7__3.4.220` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
+  - docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image__4.0.0p5__4.0.7` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
