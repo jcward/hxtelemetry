@@ -17,9 +17,11 @@ before_install:
       sudo apt-get -y install docker-ce
       export DOCKER_ROOT=ubuntu:14.04
       export REPO_MNT=/repo
+      export VOLUMES="-v \"$TRAVIS_BUILD_DIR:$REPO_MNT\""
     else
       export DOCKER_ROOT=microsoft/windowsservercore:1803
-      export REPO_MNT=/c/Users/travis/build/jcward/hxtelemetry
+      export REPO_MNT=/c/repo
+      export VOLUMES="-v \"$TRAVIS_BUILD_DIR:C:\\repo\""
     fi
 
 # Perform docker image setup, which sets up the environments
