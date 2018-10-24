@@ -28,6 +28,8 @@ install:
   - |
     # - - Setup some docker images as Haxe+hxcpp build environments - -
 
+    set -x
+
     # Neko 2.1.0 base image
     date
     docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" $DOCKER_ROOT /bin/bash -c "cd $REPO_MNT; source ci/init_env.source; source ci/setup.neko.source"
