@@ -1,0 +1,16 @@
+# Initialize ~/.docker.env
+
+cat << EOF > ~/.docker.env
+# Evaluate the export in the current shell, and save it in ~/.docker.env for future shells
+function save_export () {
+   eval "export \"\$1\""
+   echo "export \"\$1\"" >> ~/.docker.env
+}
+EOF
+
+# And enable it now...
+source ~/.docker.env
+
+# Install some necessary tooling
+sudo apt-get update
+sudo apt-get install -y git build-essential make moreutils curl unzip

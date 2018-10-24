@@ -27,7 +27,7 @@ class Main {
     var frame:Int = 0;
 
     var t0 = Sys.time();
-    while (Sys.time()-t0 < 40) {
+    while (Sys.time()-t0 < 5) { // run for 5 seconds, ~34MB of telemetry data
       frame++;
       for (i in 0...4000) {
         refs.push(i);

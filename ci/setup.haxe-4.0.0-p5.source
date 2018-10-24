@@ -1,0 +1,8 @@
+# Install neko and Haxe
+cd /opt/
+
+curl -sL https://github.com/HaxeFoundation/haxe/releases/download/4.0.0-preview.5/haxe-4.0.0-preview.5-linux64.tar.gz | tar -xz
+mv haxe_* haxe-4.0.0-preview5
+save_export HAXE_STD_PATH=/opt/haxe-4.0.0-preview5/std
+save_export PATH=/opt/haxe-4.0.0-preview5/:\$PATH
+haxelib setup /opt/haxelib
