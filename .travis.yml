@@ -32,7 +32,7 @@ install:
     # Neko 2.1.0 base image
     date
     echo "docker run -e LANG=C.UTF-8 $VOLUMES $DOCKER_ROOT /bin/bash -c \"cd $REPO_MNT; source ci/init_env.source; source ci/setup.neko.source\""
-    docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" $DOCKER_ROOT /bin/bash -c "cd $REPO_MNT; source ci/init_env.source; source ci/setup.neko.source"
+    docker run -e LANG=C.UTF-8 $VOLUMES $DOCKER_ROOT /bin/bash -c "cd $REPO_MNT; source ci/init_env.source; source ci/setup.neko.source"
     (docker commit `docker ps -lq` | cut -c8-) > ~/.docker.image.neko
     date
     echo "Write base neko image `cat ~/.docker.image.neko`"
