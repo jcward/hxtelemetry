@@ -17,7 +17,7 @@ before_install:
       sudo apt-get -y install docker-ce
       export DOCKER_ROOT=ubuntu:14.04
       export REPO_MNT=/repo
-      export VOLUMES="-v \"C:\Users\travis\build\jcward\hxtelemetry:C:\repo\""
+      export VOLUMES="-v \"C:\\Users\\travis\\build\\jcward\\hxtelemetry:C:\\repo\""
     else
       export DOCKER_ROOT=microsoft/windowsservercore:1803
       export REPO_MNT=/c/repo
