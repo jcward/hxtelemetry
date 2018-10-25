@@ -20,3 +20,4 @@ The CI tests the following configurations on Linux 64-bit:
 
 And the following configuration on Windows 64-bit:
 - Haxe 3.4.7 /w hxcpp 3.4.220
+
