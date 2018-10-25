@@ -8,24 +8,12 @@ language: shell
 
 before_install:
   - |
-    env | sort
-    export DOCKER_ROOT=microsoft/windowsservercore:1803
-    export REPO_MNT=/c/repo
-  - echo "ok"
+    echo "ok"
 
 # Perform docker image setup, which sets up the environments
 install:
   - |
-    alias save_export=export
-    mkdir /opt/
-    source $TRAVIS_BUILD_DIR/ci/setup.neko.source
-    source $TRAVIS_BUILD_DIR/ci/setup.haxe-3.4.7.source
-    $TRAVIS_BUILD_DIR/ci/setup.hxcpp.sh 3.4.220
-    ls -la /opt/
-    echo $PATH
-    env | sort
-    neko -version
-    haxe -version
+    echo "ok"
 
 script:
-  - cd $TRAVIS_BUILD_DIR && ./ci/test_wastealloc.sh
+  - cd $TRAVIS_BUILD_DIR && ./ci/cygwin_ci.sh
