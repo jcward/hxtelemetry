@@ -20,8 +20,8 @@ install:
 
     # Neko 2.1.0 base image
     date
-    echo "docker run -e LANG=C.UTF-8 -v C:\Users\travis\build\jcward\hxtelemetry:C:\repo\ $DOCKER_ROOT /bin/bash -c \"cd $REPO_MNT; source ci/init_env.source; source ci/setup.neko.source\""
-    docker run -e LANG=C.UTF-8 -v C:\Users\travis\build\jcward\hxtelemetry:C:\repo\ $DOCKER_ROOT /bin/bash -c "cd $REPO_MNT; source ci/init_env.source; source ci/setup.neko.source"
+    echo "docker run -e LANG=C.UTF-8 -v C:\Users\travis\build\jcward\hxtelemetry:C:\repo\ $DOCKER_ROOT c:\cygwin\bin\bash -c \"dir; cd /c/repo; dir\""
+    docker run -e LANG=C.UTF-8 -v C:\Users\travis\build\jcward\hxtelemetry:C:\repo\ $DOCKER_ROOT c:\cygwin\bin\bash -c "dir; cd /c/repo; dir"
     (docker commit `docker ps -lq` | cut -c8-) > ~/.docker.image.neko
     date
     echo "Write base neko image `cat ~/.docker.image.neko`"
