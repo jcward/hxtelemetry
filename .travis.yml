@@ -16,17 +16,11 @@ before_install:
 # Perform docker image setup, which sets up the environments
 install:
   - |
-    # - - Setup some docker images as Haxe+hxcpp build environments - -
-
-    # Neko 2.1.0 base image
-    echo "BEFORE"
-    echo "docker run -v C:\Users\travis\build\jcward\hxtelemetry:C:\repo\ $DOCKER_ROOT c:\\cygwin\\bin\\bash -c \"dir; cd /c/repo; dir\""
-    echo $( docker run -v C:\Users\travis\build\jcward\hxtelemetry:C:\repo\ $DOCKER_ROOT c:\\cygwin\\bin\\bash -c "dir; cd /c/repo; dir" )
-    echo "AFTER"
-    (docker commit `docker ps -lq` | cut -c8-) > ~/.docker.image.neko
-    echo "AFTER COMMIT"
-    date
-    echo "Write base neko image `cat ~/.docker.image.neko`"
-
+    alias save_export=export
+    mkdir /opt/
+    source $TRAVIS_BUILD_DIR/ci/setup.haxe-3.4.7.source
+    $TRAVIS_BUILD_DIR/ci/setup.hxcpp.sh 3.4.220
+    ls -la /opt/
+    
 script:
     date
