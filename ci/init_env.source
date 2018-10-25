@@ -3,7 +3,7 @@
 cat << EOF > ~/.docker.env
 # Evaluate the export in the current shell, and save it in ~/.docker.env for future shells
 function save_export () {
-   export "$1"
+   export "\$1"
    echo "export \"\$1\"" >> ~/.docker.env
 }
 EOF
