@@ -20,8 +20,8 @@ install:
 
     # Neko 2.1.0 base image
     echo "BEFORE"
-    echo "docker run -v C:\Users\travis\build\jcward\hxtelemetry:C:\repo\ $DOCKER_ROOT c:\cygwin\bin\bash -c \"dir; cd /c/repo; dir\""
-    docker run -v C:\Users\travis\build\jcward\hxtelemetry:C:\repo\ $DOCKER_ROOT c:\cygwin\bin\bash -c "dir; cd /c/repo; dir"
+    echo "docker run -v C:\Users\travis\build\jcward\hxtelemetry:C:\repo\ $DOCKER_ROOT c:\\cygwin\\bin\\bash -c \"dir; cd /c/repo; dir\""
+    docker run -v C:\Users\travis\build\jcward\hxtelemetry:C:\repo\ $DOCKER_ROOT c:\\cygwin\\bin\\bash -c "dir; cd /c/repo; dir"
     echo "AFTER"
     (docker commit `docker ps -lq` | cut -c8-) > ~/.docker.image.neko
     echo "AFTER COMMIT"
