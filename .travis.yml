@@ -28,15 +28,15 @@ install:
       
       # Build the rest off of that...
       # Haxe 3.2.1, hxcpp 3.2.193
-      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-3.2.1.source; $REPO_MNT/ci/setup.hxcpp.sh 3.2.193"
+      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat /tmp/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-3.2.1.source; $REPO_MNT/ci/setup.hxcpp.sh 3.2.193"
       (docker commit `docker ps -lq` | cut -c8-) > /tmp/.docker.image__3.2.1__3.2.193
       
       # Haxe 3.4.7, hxcpp 3.4.220
-      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-3.4.7.source; $REPO_MNT/ci/setup.hxcpp.sh 3.4.220"
+      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat /tmp/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-3.4.7.source; $REPO_MNT/ci/setup.hxcpp.sh 3.4.220"
       (docker commit `docker ps -lq` | cut -c8-) > /tmp/.docker.image__3.4.7__3.4.220
       
       # Haxe 4.0.0-preview5, hxcpp 4.0.7
-      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-4.0.0-p5.source; $REPO_MNT/ci/setup.hxcpp.sh 4.0.7"
+      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat /tmp/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-4.0.0-p5.source; $REPO_MNT/ci/setup.hxcpp.sh 4.0.7"
       (docker commit `docker ps -lq` | cut -c8-) > /tmp/.docker.image__4.0.0p5__4.0.7
       
     fi
