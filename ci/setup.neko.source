@@ -2,7 +2,7 @@
 
 if [ `type -t save_export`"" != 'function' ]; then 
   function save_export () {
-   export "$1"
+   eval "export \"\$1\""
   }
 fi
 
