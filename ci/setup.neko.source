@@ -2,7 +2,7 @@
 cd /opt/
 
 if [[ "$OS" == "Windows_NT" ]]; then
-  curl -sL http://nekovm.org/media/neko-2.1.0-win64.zip > neko.zip
+  curl -sL http://nekovm.org/media/neko-2.1.0-win.zip > neko.zip
   unzip neko.zip
   rm neko.zip
 elif [[ "$OSTYPE" == "darwin"* ]]; then
