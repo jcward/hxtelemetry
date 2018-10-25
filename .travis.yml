@@ -21,32 +21,33 @@ before_install:
 install:
   - |
     if [ "$TRAVIS_OS_NAME" = 'linux' ]; then
-      # - - Setup some docker images as Haxe+hxcpp build environments - -
+      
       # Neko 2.1.0 base image
-      date
-      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" $DOCKER_ROOT /bin/bash -c "cd $REPO_MNT; source ci/init_env.source; source ci/setup.neko.source"
-      (docker commit `docker ps -lq` | cut -c8-) > $TRAVIS_BUILD_DIR/.docker.image.neko
-      date
-      echo "Wrote base neko image `cat $TRAVIS_BUILD_DIR/.docker.image.neko`"
+      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" ubuntu:14.04 /bin/bash -c "cd $REPO_MNT; source ci/init_env.source; source ci/setup.neko.source"
+      (docker commit `docker ps -lq` | cut -c8-) > /tmp/.docker.image.neko
+      
       # Build the rest off of that...
       # Haxe 3.2.1, hxcpp 3.2.193
-      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat $TRAVIS_BUILD_DIR/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-3.2.1.source; $REPO_MNT/ci/setup.hxcpp.sh 3.2.193"
-      (docker commit `docker ps -lq` | cut -c8-) > $TRAVIS_BUILD_DIR/.docker.image__3.2.1__3.2.193
+      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-3.2.1.source; $REPO_MNT/ci/setup.hxcpp.sh 3.2.193"
+      (docker commit `docker ps -lq` | cut -c8-) > /tmp/.docker.image__3.2.1__3.2.193
+      
       # Haxe 3.4.7, hxcpp 3.4.220
-      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat $TRAVIS_BUILD_DIR/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-3.4.7.source; $REPO_MNT/ci/setup.hxcpp.sh 3.4.220"
-      (docker commit `docker ps -lq` | cut -c8-) > $TRAVIS_BUILD_DIR/.docker.image__3.4.7__3.4.220
+      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-3.4.7.source; $REPO_MNT/ci/setup.hxcpp.sh 3.4.220"
+      (docker commit `docker ps -lq` | cut -c8-) > /tmp/.docker.image__3.4.7__3.4.220
+      
       # Haxe 4.0.0-preview5, hxcpp 4.0.7
-      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat $TRAVIS_BUILD_DIR/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-4.0.0-p5.source; $REPO_MNT/ci/setup.hxcpp.sh 4.0.7"
-      (docker commit `docker ps -lq` | cut -c8-) > $TRAVIS_BUILD_DIR/.docker.image__4.0.0p5__4.0.7
+      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat ~/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-4.0.0-p5.source; $REPO_MNT/ci/setup.hxcpp.sh 4.0.7"
+      (docker commit `docker ps -lq` | cut -c8-) > /tmp/.docker.image__4.0.0p5__4.0.7
+      
     fi
 
 script:
   - |
     if [ "$TRAVIS_OS_NAME" = 'linux' ]; then
       # Linux runs various environment images
-      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat $TRAVIS_BUILD_DIR/.docker.image__3.2.1__3.2.193` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
-      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat $TRAVIS_BUILD_DIR/.docker.image__3.4.7__3.4.220` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
-      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat $TRAVIS_BUILD_DIR/.docker.image__4.0.0p5__4.0.7` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
+      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat /tmp/.docker.image__3.2.1__3.2.193` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
+      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat /tmp/.docker.image__3.4.7__3.4.220` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
+      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat /tmp/.docker.image__4.0.0p5__4.0.7` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
     else
       # Windows sets up and runs a single environment
       cd $TRAVIS_BUILD_DIR && ./ci/cygwin_ci.sh
