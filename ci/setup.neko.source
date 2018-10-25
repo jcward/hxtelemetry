@@ -2,7 +2,7 @@
 
 if [ `type -t save_export`"" != 'function' ]; then 
   function save_export () {
-   eval "export \"\$1\""
+   export "$1"
   }
 fi
 
@@ -24,8 +24,8 @@ fi
 mv neko* neko-2.1.0
 
 save_export NEKOPATH=/opt/neko-2.1.0/
-save_export PATH=/opt/neko-2.1.0/:\$PATH
-save_export LD_LIBRARY_PATH=/opt/neko-2.1.0/:\$LD_LIBRARY_PATH
+save_export PATH=/opt/neko-2.1.0/:$PATH
+save_export LD_LIBRARY_PATH=/opt/neko-2.1.0/:$LD_LIBRARY_PATH
 
 echo "Neko installed"
 echo $NEKOPATH
