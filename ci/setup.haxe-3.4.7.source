@@ -1,8 +1,32 @@
-# Install neko and Haxe
+# Install Haxe 3.4.7
+
+if [ `type -t save_export`"" != 'function' ]; then 
+  function save_export () {
+   export "$1"
+  }
+fi
+
 cd /opt/
 
-curl -sL https://github.com/HaxeFoundation/haxe/releases/download/3.4.7/haxe-3.4.7-linux64.tar.gz | tar -xz
-mv haxe_* haxe-3.4.7-linux64
-save_export HAXE_STD_PATH=/opt/haxe-3.4.7-linux64/std
-save_export PATH=/opt/haxe-3.4.7-linux64/:\$PATH
+if [[ "$OS" == "Windows_NT" ]]; then
+  curl -sL https://github.com/HaxeFoundation/haxe/releases/download/3.4.7/haxe-3.4.7-win64.zip > haxe.zip
+  unzip haxe.zip
+  rm haxe.zip
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  curl -sL https://github.com/HaxeFoundation/haxe/releases/download/3.4.7/haxe-3.4.7-osx.tar.gz | tar -xz
+elif [[ "$OSTYPE" == "linux"* ]]; then
+  curl -sL https://github.com/HaxeFoundation/haxe/releases/download/3.4.7/haxe-3.4.7-linux64.tar.gz | tar -xz
+else
+  echo "Error installing Haxe: unsupported OS"
+  exit 1
+fi
+
+mv haxe* haxe-3.4.7
+save_export HAXE_STD_PATH=/opt/haxe-3.4.7/std
+save_export PATH=/opt/haxe-3.4.7/:$PATH
+
+echo "Haxe installed"
+echo $HAXE_STD_PATH
+haxe -version
+
 haxelib setup /opt/haxelib

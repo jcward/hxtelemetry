@@ -1,6 +1,33 @@
 # Install neko 2.1.0 into /opt/
+
+if [ `type -t save_export`"" != 'function' ]; then 
+  function save_export () {
+   export "$1"
+  }
+fi
+
 cd /opt/
-curl -sL http://nekovm.org/media/neko-2.1.0-linux64.tar.gz | tar -xz
-save_export NEKOPATH=/opt/neko-2.1.0-linux64/
-save_export PATH=/opt/neko-2.1.0-linux64/:\$PATH
-save_export LD_LIBRARY_PATH=/opt/neko-2.1.0-linux64/:\$LD_LIBRARY_PATH
+
+if [[ "$OS" == "Windows_NT" ]]; then
+  curl -sL http://nekovm.org/media/neko-2.1.0-win.zip > neko.zip
+  unzip neko.zip
+  rm neko.zip
+elif [[ "$OSTYPE" == "darwin"* ]]; then
+  curl -sL http://nekovm.org/media/neko-2.1.0-osx64.tar.gz | tar -xz
+elif [[ "$OSTYPE" == "linux"* ]]; then
+  curl -sL http://nekovm.org/media/neko-2.1.0-linux64.tar.gz | tar -xz
+else
+  echo "Error installing Haxe: unsupported OS"
+  exit 1
+fi
+
+mv neko* neko-2.1.0
+
+save_export NEKOPATH=/opt/neko-2.1.0/
+save_export PATH=/opt/neko-2.1.0/:$PATH
+save_export LD_LIBRARY_PATH=/opt/neko-2.1.0/:$LD_LIBRARY_PATH
+
+echo "Neko installed"
+echo $NEKOPATH
+echo $PATH
+neko -version
