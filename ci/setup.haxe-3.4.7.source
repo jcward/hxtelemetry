@@ -23,7 +23,7 @@ fi
 
 mv haxe* haxe-3.4.7
 save_export HAXE_STD_PATH=/opt/haxe-3.4.7/std
-save_export PATH=/opt/haxe-3.4.7/:\$PATH
+save_export PATH=/opt/haxe-3.4.7/:$PATH
 
 echo "Haxe installed"
 echo $HAXE_STD_PATH
