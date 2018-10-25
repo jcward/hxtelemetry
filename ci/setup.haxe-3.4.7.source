@@ -1,4 +1,4 @@
-# Install neko and Haxe
+# Install Haxe 3.4.7
 cd /opt/
 
 if [[ "$OS" == "Windows_NT" ]]; then
@@ -6,10 +6,11 @@ if [[ "$OS" == "Windows_NT" ]]; then
   unzip haxe.zip
   rm haxe.zip
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-  curl -sL https://github.com/HaxeFoundation/haxe/releases/download/3.4.7/haxe-3.4.7-linux64.tar.gz | tar -xz
+  curl -sL https://github.com/HaxeFoundation/haxe/releases/download/3.4.7/haxe-3.4.7-osx.tar.gz | tar -xz
 elif [[ "$OSTYPE" == "linux"* ]]; then
   curl -sL https://github.com/HaxeFoundation/haxe/releases/download/3.4.7/haxe-3.4.7-linux64.tar.gz | tar -xz
 else
+  echo "Error installing Haxe: unsupported OS"
   exit 1
 fi
 
