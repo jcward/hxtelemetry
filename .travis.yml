@@ -19,10 +19,13 @@ install:
   - |
     alias save_export=export
     mkdir /opt/
+    source $TRAVIS_BUILD_DIR/ci/setup.neko.source
     source $TRAVIS_BUILD_DIR/ci/setup.haxe-3.4.7.source
     $TRAVIS_BUILD_DIR/ci/setup.hxcpp.sh 3.4.220
     ls -la /opt/
-    haxe
+    echo $PATH
+    neko -version
+    haxe -version
 
 script:
   - date
