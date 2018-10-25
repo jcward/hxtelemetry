@@ -2,7 +2,7 @@ sudo: required
 
 os:
   - windows
-  -linux
+  - linux
 
 language: shell
 
