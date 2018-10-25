@@ -1,5 +1,7 @@
 package hxtelemetry;
 
+test broken
+
 import sys.net.Socket;
 import amf.io.Amf3Writer;
 import haxe.ds.StringMap;
