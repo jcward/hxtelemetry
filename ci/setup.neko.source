@@ -1,4 +1,8 @@
 # Install neko 2.1.0 into /opt/
+
+if [ `type -t save_export`"" != 'function' ]; then 
+  alias save_export=export
+fi
 cd /opt/
 
 if [[ "$OS" == "Windows_NT" ]]; then
