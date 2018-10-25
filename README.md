@@ -10,7 +10,7 @@ See [hxscout.com](http://hxscout.com) for more details.
 CI / Compatibility
 ==================
 
-<img src="https://travis-ci.com/jcward/hxtelemetry.svg?branch=master">
+<img src="https://travis-ci.com/jcward/hxtelemetry.svg?branch=master"> - [build history](https://travis-ci.com/jcward/hxtelemetry/builds)
 
 The CI tests the following configurations on Linux 64-bit:
 
@@ -20,4 +20,3 @@ The CI tests the following configurations on Linux 64-bit:
 
 And the following configuration on Windows 64-bit:
 - Haxe 3.4.7 /w hxcpp 3.4.220
-
