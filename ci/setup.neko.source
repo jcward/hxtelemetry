@@ -1,13 +1,11 @@
 # Install neko 2.1.0 into /opt/
 
-echo "Is save_export defined?"
 if [ `type -t save_export`"" != 'function' ]; then 
-  echo "No, define it"
   function save_export () {
    export "$1"
   }
-
 fi
+
 cd /opt/
 
 if [[ "$OS" == "Windows_NT" ]]; then
