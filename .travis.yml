@@ -24,6 +24,7 @@ install:
     $TRAVIS_BUILD_DIR/ci/setup.hxcpp.sh 3.4.220
     ls -la /opt/
     echo $PATH
+    env | sort
     neko -version
     haxe -version
 
