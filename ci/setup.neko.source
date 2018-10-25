@@ -19,3 +19,7 @@ mv neko* neko-2.1.0
 save_export NEKOPATH=/opt/neko-2.1.0/
 save_export PATH=/opt/neko-2.1.0/:\$PATH
 save_export LD_LIBRARY_PATH=/opt/neko-2.1.0/:\$LD_LIBRARY_PATH
+
+echo "Neko installed"
+echo $PATH
+neko -version
