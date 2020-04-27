@@ -40,6 +40,10 @@ install:
       docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat /tmp/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-4.0.0-p5.source; $REPO_MNT/ci/setup.hxcpp.sh 4.0.7"
       (docker commit `docker ps -lq` | cut -c8-) > /tmp/.docker.image__4.0.0p5__4.0.7
       
+      # Haxe 4.0.5, hxcpp 4.0.69
+      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat /tmp/.docker.image.neko` /bin/bash -c "source ~/.docker.env; source $REPO_MNT/ci/setup.haxe-4.0.5.source; $REPO_MNT/ci/setup.hxcpp.sh 4.0.69"
+      (docker commit `docker ps -lq` | cut -c8-) > /tmp/.docker.image__4.0.5__4.0.69
+      
     fi
 
 script:
@@ -49,6 +53,7 @@ script:
       docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat /tmp/.docker.image__3.2.1__3.2.193` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
       docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat /tmp/.docker.image__3.4.7__3.4.220` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
       docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat /tmp/.docker.image__4.0.0p5__4.0.7` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
+      docker run -e LANG=C.UTF-8 -v "$TRAVIS_BUILD_DIR:$REPO_MNT" `cat /tmp/.docker.image__4.0.5__4.0.69` /bin/bash -c "source ~/.docker.env; cd $REPO_MNT; ./ci/test_wastealloc.sh"
     else
       # Windows sets up and runs a single environment
       cd $TRAVIS_BUILD_DIR && ./ci/cygwin_ci.sh
