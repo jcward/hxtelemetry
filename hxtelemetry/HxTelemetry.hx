@@ -5,7 +5,10 @@ import amf.io.Amf3Writer;
 import haxe.ds.StringMap;
 import haxe.io.Bytes;
 
-#if cpp
+#if (target.threaded)
+  import sys.thread.Thread;
+  import sys.thread.Mutex;
+#elseif cpp
   import cpp.vm.Thread;
   import cpp.vm.Mutex;
 #elseif neko
